@@ -39,7 +39,10 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
         },
     );
 
-    interface TestScrubber {
+    /**
+     * Define a test EventRelayer and Scrubber
+     */
+    interface TestJiraData {
         webhookEvent: string;
         issue_event_type_name: string;
         user: {
@@ -47,28 +50,28 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
         };
     }
 
-    const test: EventRelayer<TestScrubber> = {
+    const testJiraRelay: EventRelayer<TestJiraData> = {
             name: "jiraReplayer",
             test: payload => {
                 return !!payload.webhookEvent && !!payload.issue_event_type_name;
             },
             targetEvent: {
-                // eventType: "public",
-                // eventTarget: ["foobar"],
                 eventType: "private",
                 eventTarget: addressEvent("JiraIssue"),
-                // eventTarget: async ctx => ({userAgent: ctx.workspaceId}),
             },
             scrubber: async issue => {
                issue.user.displayName = guid();
                return issue;
             },
-
     };
+
+    /**
+     * Register Ext pack
+     */
     sdm.addExtensionPacks(
         eventRelaySupport({
             eventRelayers: [
-                test,
+                testJiraRelay,
             ],
         }),
     );
@@ -79,6 +82,9 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
 export const configuration: Configuration = {
     postProcessors: [
         configureSdm(machineMaker),
+        /**
+         * Register Event Relay customizer
+         */
         eventRelayPostProcessor,
     ],
 };
