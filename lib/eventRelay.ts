@@ -52,7 +52,7 @@ export interface EventRelayer<DATA = any> {
      * Check if this payload is of the event type this Relayer expects
      * @param payload
      */
-    test: (payload: any) => boolean;
+    test: (payload: DATA) => boolean;
 
     /**
      * Target Event

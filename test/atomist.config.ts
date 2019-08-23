@@ -40,6 +40,8 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
     );
 
     interface TestScrubber {
+        webhookEvent: string;
+        issue_event_type_name: string;
         user: {
             displayName: string,
         };
@@ -48,7 +50,7 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
     const test: EventRelayer<TestScrubber> = {
             name: "jiraReplayer",
             test: payload => {
-                return payload.hasOwnProperty("webhookEvent") && payload.hasOwnProperty("issue_event_type_name");
+                return !!payload.webhookEvent && !!payload.issue_event_type_name;
             },
             targetEvent: {
                 // eventType: "public",

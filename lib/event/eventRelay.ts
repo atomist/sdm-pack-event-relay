@@ -31,6 +31,10 @@ export class EventRelayHandler implements HandleEvent<any> {
             }
         }
 
+        if (relayersForThisEvent.length === 0) {
+            logger.debug(`No EventRelayers found for this event`);
+        }
+
         /**
          * For each matching relayer, run scrubber if provided followed by send
          */
