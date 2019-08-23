@@ -100,6 +100,7 @@ async function sendData(relayer: EventRelayer, data: any, ctx: HandlerContext): 
 async function sdmPostWebhook(url: string[] | string, payload: any): Promise<void> {
     const config = configurationValue<Configuration>();
 
+    // TODO: Add auth using workspace id/api key
     try {
         for (const dest of toArray(url)) {
             const httpClient = config.http.client.factory.create(dest);
