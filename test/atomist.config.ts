@@ -27,6 +27,7 @@ import {
     configureSdm,
     createSoftwareDeliveryMachine,
 } from "@atomist/sdm-core";
+import {EventRelayData} from "../lib/event/eventRelay";
 import {EventRelayer, eventRelaySupport} from "../lib/eventRelay";
 import {eventRelayPostProcessor} from "../lib/support/customizer";
 
@@ -47,18 +48,15 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
 
     const bitbucketRelay: EventRelayer<BitbucketTestData> = {
         name: "bitbucketRelay",
-        test: payload => !!payload.actor && !!payload.date && !!payload.eventKey,
+        test: payload => !!payload.body.actor && !!payload.body.date && !!payload.body.eventKey,
         targetEvent: {
             eventType: "public",
             eventTarget: sdm.configuration.sdm.git.webhookdest,
             headers: (ctx, payload) => {
-                let headers: HttpClientOptions["headers"];
-                if (payload.eventKey === "pr:opened") {
-                    headers = {
-                        "X-Event-Key": "pr:opened",
-                    };
-                }
-                return headers;
+                delete payload.headers.host;
+                delete payload.headers.expect;
+                delete payload.headers["content-length"];
+                return { ...payload.headers as HttpClientOptions["headers"]};
             },
         },
     };
@@ -77,7 +75,7 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
     const testJiraRelay: EventRelayer<TestJiraData> = {
             name: "jiraReplayer",
             test: payload => {
-                return !!payload.webhookEvent && !!payload.issue_event_type_name;
+                return !!payload.body.webhookEvent && !!payload.body.issue_event_type_name;
             },
             targetEvent: {
                 eventType: "private",

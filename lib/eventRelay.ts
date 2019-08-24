@@ -1,6 +1,6 @@
 import {Destination, HandlerContext, HttpClientOptions, logger} from "@atomist/automation-client";
 import {ExtensionPack, metadata} from "@atomist/sdm";
-
+import {EventRelayData} from "./event/eventRelay";
 /**
  * Represents the destination for an event relayer
  *
@@ -21,7 +21,7 @@ type EventRelayDestination<DATA> =
     | {
         eventType: "public",
         eventTarget: string | string[],
-        headers?: (ctx: HandlerContext, payload: DATA) => HttpClientOptions["headers"],
+        headers?: (ctx: HandlerContext, payload: EventRelayData<DATA>) => HttpClientOptions["headers"],
     }
     /**
      * Use this variant for public targets with a url list that is dynamically built
@@ -29,8 +29,8 @@ type EventRelayDestination<DATA> =
      */
     | {
         eventType: "publicDynamic",
-        eventTarget: (ctx: HandlerContext, payload: DATA) => Promise<string[]>,
-        headers?: (ctx: HandlerContext, payload: DATA) => HttpClientOptions["headers"],
+        eventTarget: (ctx: HandlerContext, payload: EventRelayData<DATA>) => Promise<string[]>,
+        headers?: (ctx: HandlerContext, payload: EventRelayData<DATA>) => HttpClientOptions["headers"],
     }
     /**
      * Use this variant for private targets with a static destination(s)
@@ -57,12 +57,12 @@ export interface EventRelayer<DATA = any> {
      * Check if this payload is of the event type this Relayer expects
      * @param payload
      */
-    test: (payload: DATA) => boolean;
+    test: (payload: EventRelayData<DATA>) => boolean;
 
     /**
      * Target Event
      */
-    targetEvent: EventRelayDestination<DATA>;
+    targetEvent: EventRelayDestination<EventRelayData<DATA>>;
 
     /**
      * Optionally supply a scrubber to munge data prior to relay
@@ -71,7 +71,7 @@ export interface EventRelayer<DATA = any> {
 }
 
 interface EventRelaySupportOptions {
-    eventRelayers: EventRelayer[];
+    eventRelayers: Array<EventRelayer<any>>;
 }
 
 export const eventRelaySupport = (

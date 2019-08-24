@@ -12,12 +12,18 @@ import {
 import {EventHandler} from "@atomist/automation-client/lib/decorators";
 import {HandleEvent} from "@atomist/automation-client/lib/HandleEvent";
 import {toArray} from "@atomist/sdm-core/lib/util/misc/array";
+import {IncomingHttpHeaders} from "http";
 import {EventRelayer} from "../eventRelay";
+
+export interface EventRelayData<DATA = any> {
+    body: DATA;
+    headers: IncomingHttpHeaders;
+}
 
 // TODO: I don't want a graphQL subscription here, but I have to have it or I get errors
 @EventHandler("Handle eventRelay events", "subscription Placeholder { HerokuApp { app } }")
 export class EventRelayHandler implements HandleEvent<any> {
-    public handle(event: EventFired<any>, ctx: HandlerContext): Promise<HandlerResult> {
+    public handle(event: EventFired<EventRelayData>, ctx: HandlerContext): Promise<HandlerResult> {
         return new Promise<HandlerResult>(async (resolve, reject) => {
             /**
              * Load Event Relayers
@@ -43,9 +49,8 @@ export class EventRelayHandler implements HandleEvent<any> {
              * For each matching relayer, run scrubber if provided followed by send
              */
             for (const relayer of relayersForThisEvent) {
-                let data: any;
                 try {
-                    data = relayer.scrubber ? await relayer.scrubber(event.data) : event.data;
+                    event.data.body = relayer.scrubber ? await relayer.scrubber(event.data.body) : event.data.body;
                     if (relayer.scrubber) {
                         logger.debug(`Successfully scrubbed data with relayer ${relayer.name}'s scrubber`);
                     }
@@ -56,7 +61,7 @@ export class EventRelayHandler implements HandleEvent<any> {
                 }
 
                 try {
-                    await sendData(relayer, data, ctx);
+                    await sendData(relayer, event.data, ctx);
                     logger.debug(`Successfully sent data with relayer ${relayer.name}`);
                 } catch (e) {
                     const message = `Failed to send data with relayer ${relayer.name}.  Error => ${e}`;
@@ -78,19 +83,19 @@ export class EventRelayHandler implements HandleEvent<any> {
  * @param data
  * @param ctx
  */
-async function sendData(relayer: EventRelayer, data: any, ctx: HandlerContext): Promise<void> {
+async function sendData(relayer: EventRelayer, data: EventRelayData, ctx: HandlerContext): Promise<void> {
     if (relayer.targetEvent.eventType === "public") {
         await sdmPostWebhook(relayer.targetEvent.eventTarget, await relayer.targetEvent.headers(ctx, data), data);
     } else if (relayer.targetEvent.eventType === "publicDynamic") {
         await sdmPostWebhook(
             await relayer.targetEvent.eventTarget(ctx, data),
             await relayer.targetEvent.headers(ctx, data),
-            data,
+            data.body,
         );
     } else if (relayer.targetEvent.eventType === "private") {
-        await ctx.messageClient.send(data, relayer.targetEvent.eventTarget);
+        await ctx.messageClient.send(data.body, relayer.targetEvent.eventTarget);
     } else if (relayer.targetEvent.eventType === "privateDynamic") {
-        await ctx.messageClient.send(data, await relayer.targetEvent.eventTarget(ctx));
+        await ctx.messageClient.send(data.body, await relayer.targetEvent.eventTarget(ctx));
     }
 }
 
@@ -106,6 +111,7 @@ async function sdmPostWebhook(
     payload: any,
     ): Promise<void> {
     const config = configurationValue<Configuration>();
+    logger.debug(`sdmPostWebHook: Headers => ${JSON.stringify(headers)}`);
     try {
         for (const dest of toArray(url)) {
             const httpClient = config.http.client.factory.create(dest);

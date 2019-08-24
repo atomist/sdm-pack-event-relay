@@ -28,7 +28,10 @@ export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config
             c.post("/relay", async (req, res) => {
                 // TODO: Add auth check for headers requiring API key in use by this SDM
                 const data: EventIncoming = {
-                    data: req.body,
+                    data: {
+                        body: req.body,
+                        headers: req.headers,
+                    },
                     extensions: {
                         operationName: "EventRelayHandler",
                         team_id: config.workspaceIds[0],
