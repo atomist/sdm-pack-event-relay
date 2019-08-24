@@ -1,4 +1,4 @@
-import {Destination, HandlerContext} from "@atomist/automation-client";
+import {Destination, HandlerContext, HttpClientOptions, logger} from "@atomist/automation-client";
 import {ExtensionPack, metadata} from "@atomist/sdm";
 
 /**
@@ -9,15 +9,19 @@ import {ExtensionPack, metadata} from "@atomist/sdm";
  * via an SDM.
  *
  * Public types require an eventTarget to be set to the ingestion URL.  The event relayer will send these messages
- * via HTTPS to webhooks.atomist.com.
+ * via HTTPS to webhooks.atomist.com.  You can optionally supply additional headers for public events that will be used
+ * when posting data.  Examples of headers you may need to provide would be event type headers or auth information.
+ *
+ * Private types are sent over the internal SDM websocket.
  */
-type EventRelayDestination =
+type EventRelayDestination<DATA> =
     /**
      * Use this variant for public targets with a static url list
      */
     | {
         eventType: "public",
         eventTarget: string | string[],
+        headers?: (ctx: HandlerContext, payload: DATA) => HttpClientOptions["headers"],
     }
     /**
      * Use this variant for public targets with a url list that is dynamically built
@@ -25,7 +29,8 @@ type EventRelayDestination =
      */
     | {
         eventType: "publicDynamic",
-        eventTarget: (ctx: HandlerContext) => Promise<string[]>,
+        eventTarget: (ctx: HandlerContext, payload: DATA) => Promise<string[]>,
+        headers?: (ctx: HandlerContext, payload: DATA) => HttpClientOptions["headers"],
     }
     /**
      * Use this variant for private targets with a static destination(s)
@@ -57,7 +62,7 @@ export interface EventRelayer<DATA = any> {
     /**
      * Target Event
      */
-    targetEvent: EventRelayDestination;
+    targetEvent: EventRelayDestination<DATA>;
 
     /**
      * Optionally supply a scrubber to munge data prior to relay
@@ -79,4 +84,4 @@ export const eventRelaySupport = (
             sdm.configuration.sdm.eventRelayers = options.eventRelayers;
         },
     };
-}
+};

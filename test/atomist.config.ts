@@ -17,7 +17,7 @@
 import {
     addressEvent,
     automationClientInstance,
-    Configuration, guid, Issue,
+    Configuration, guid, HttpClientOptions, Issue,
 } from "@atomist/automation-client";
 import {
     SoftwareDeliveryMachine,
@@ -38,6 +38,30 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
             configuration: config,
         },
     );
+
+    interface BitbucketTestData {
+        eventKey: string;
+        actor: any;
+        date: string;
+    }
+
+    const bitbucketRelay: EventRelayer<BitbucketTestData> = {
+        name: "bitbucketRelay",
+        test: payload => !!payload.actor && !!payload.date && !!payload.eventKey,
+        targetEvent: {
+            eventType: "public",
+            eventTarget: sdm.configuration.sdm.git.webhookdest,
+            headers: (ctx, payload) => {
+                let headers: HttpClientOptions["headers"];
+                if (payload.eventKey === "pr:opened") {
+                    headers = {
+                        "X-Event-Key": "pr:opened",
+                    };
+                }
+                return headers;
+            },
+        },
+    };
 
     /**
      * Define a test EventRelayer and Scrubber
@@ -72,6 +96,7 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
         eventRelaySupport({
             eventRelayers: [
                 testJiraRelay,
+                bitbucketRelay,
             ],
         }),
     );

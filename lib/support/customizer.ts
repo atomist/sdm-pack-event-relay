@@ -12,6 +12,7 @@ import {
 } from "@atomist/automation-client";
 import * as bodyParser from "body-parser";
 import {EventRelayHandler} from "../event/eventRelay";
+import {EventRelayer} from "../eventRelay";
 
 export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config: Configuration) => {
     config.http.customizers.push(
@@ -19,6 +20,10 @@ export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config
             c.use(bodyParser.urlencoded({extended: true}));
             c.use(bodyParser.json());
             let registered = false;
+
+            logger.debug(`EventRelayers registered: ` +
+                config.sdm.eventRelayers.map((r: EventRelayer) => r.name).join(", "),
+            );
 
             c.post("/relay", async (req, res) => {
                 // TODO: Add auth check for headers requiring API key in use by this SDM
