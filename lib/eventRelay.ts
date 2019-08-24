@@ -21,7 +21,7 @@ type EventRelayDestination<DATA> =
     | {
         eventType: "public",
         eventTarget: string | string[],
-        headers?: (ctx: HandlerContext, payload: EventRelayData<DATA>) => HttpClientOptions["headers"],
+        headers?: (ctx: HandlerContext, payload: DATA) => HttpClientOptions["headers"],
     }
     /**
      * Use this variant for public targets with a url list that is dynamically built
@@ -29,8 +29,8 @@ type EventRelayDestination<DATA> =
      */
     | {
         eventType: "publicDynamic",
-        eventTarget: (ctx: HandlerContext, payload: EventRelayData<DATA>) => Promise<string[]>,
-        headers?: (ctx: HandlerContext, payload: EventRelayData<DATA>) => HttpClientOptions["headers"],
+        eventTarget: (ctx: HandlerContext, payload: DATA) => Promise<string[]>,
+        headers?: (ctx: HandlerContext, payload: DATA) => HttpClientOptions["headers"],
     }
     /**
      * Use this variant for private targets with a static destination(s)
