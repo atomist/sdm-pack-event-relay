@@ -24,7 +24,8 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "dependencies": {
-    "body-parser": "^1.19.0"
+    "body-parser": "^1.19.0",
+    "lodash": "^4.17.15"
   },
   "peerDependencies": {
     "@atomist/automation-client": "*",

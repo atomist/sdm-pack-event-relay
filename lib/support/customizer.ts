@@ -7,10 +7,11 @@
 import {
     automationClientInstance,
     Configuration,
-    ConfigurationPostProcessor,
+    ConfigurationPostProcessor, configurationValue,
     EventIncoming, guid, logger,
 } from "@atomist/automation-client";
 import * as bodyParser from "body-parser";
+import * as _ from "lodash";
 import {EventRelayHandler} from "../event/eventRelay";
 import {EventRelayer} from "../eventRelay";
 
@@ -26,7 +27,24 @@ export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config
             );
 
             c.post("/relay", async (req, res) => {
-                // TODO: Add auth check for headers requiring API key in use by this SDM
+                if (req.get("authorization")) {
+                    if (!(req.get("authorization").split(" ")[1] === config.apiKey)) {
+                        res.status(401);
+                        res.send({
+                            success: false,
+                            message: "Unrecognized API Key",
+                        });
+                        return;
+                    }
+                } else {
+                    res.status(401);
+                    res.send({
+                        success: false,
+                        message: "Unauthorized.  Must supply token",
+                    });
+                    return;
+                }
+
                 const data: EventIncoming = {
                     data: {
                         body: req.body,
@@ -46,7 +64,7 @@ export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config
                 }
 
                 automationClientInstance().webSocketHandler.processEvent(data);
-                res.send({state: "success", message_delivered: true});
+                res.send({success: true, message: "Payload submitted to be relayed"});
             });
         },
     );

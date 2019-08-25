@@ -56,7 +56,10 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
                 delete payload.headers.host;
                 delete payload.headers.expect;
                 delete payload.headers["content-length"];
-                return { ...payload.headers as HttpClientOptions["headers"]};
+                return {
+                    ...payload.headers as HttpClientOptions["headers"],
+                    host: sdm.configuration.sdm.git.webhookdest,
+                };
             },
         },
     };
