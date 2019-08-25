@@ -10,18 +10,13 @@ import {
     ConfigurationPostProcessor, configurationValue,
     EventIncoming, guid, logger,
 } from "@atomist/automation-client";
-import * as bodyParser from "body-parser";
-import * as _ from "lodash";
 import {EventRelayHandler} from "../event/eventRelay";
 import {EventRelayer} from "../eventRelay";
 
 export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config: Configuration) => {
     config.http.customizers.push(
         c => {
-            c.use(bodyParser.urlencoded({extended: true}));
-            c.use(bodyParser.json());
             let registered = false;
-
             logger.debug(`EventRelayers registered: ` +
                 config.sdm.eventRelayers.map((r: EventRelayer) => r.name).join(", "),
             );
@@ -30,19 +25,17 @@ export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config
                 if (req.get("authorization")) {
                     if (!(req.get("authorization").split(" ")[1] === config.apiKey)) {
                         res.status(401);
-                        res.send({
+                        return res.send({
                             success: false,
                             message: "Unrecognized API Key",
                         });
-                        return;
                     }
                 } else {
                     res.status(401);
-                    res.send({
+                    return res.send({
                         success: false,
                         message: "Unauthorized.  Must supply token",
                     });
-                    return;
                 }
 
                 const data: EventIncoming = {
@@ -64,7 +57,7 @@ export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config
                 }
 
                 automationClientInstance().webSocketHandler.processEvent(data);
-                res.send({success: true, message: "Payload submitted to be relayed"});
+                return res.send({success: true, message: "Payload submitted to be relayed"});
             });
         },
     );

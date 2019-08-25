@@ -124,7 +124,7 @@ async function sdmPostWebhook(
                         ...headers,
                     },
                 );
-            logger.debug(`sdmPostWebhook Result: ${JSON.stringify(result)}`);
+            logger.debug(`sdmPostWebhook Result: ${JSON.stringify(result.body)}`);
         }
     } catch (e) {
         logger.error("sdmPostWebhook:  Error! Failed to send webhook.  Failure: " + e.message);
