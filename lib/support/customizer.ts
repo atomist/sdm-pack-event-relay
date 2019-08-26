@@ -7,13 +7,13 @@
 import {
     automationClientInstance,
     Configuration,
-    ConfigurationPostProcessor, configurationValue,
     EventIncoming, guid, logger,
 } from "@atomist/automation-client";
+import {SoftwareDeliveryMachineConfiguration} from "@atomist/sdm";
 import {EventRelayHandler} from "../event/eventRelay";
 import {EventRelayer} from "../eventRelay";
 
-export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config: Configuration) => {
+export function eventRelayPostProcessor(config: Configuration & SoftwareDeliveryMachineConfiguration): void {
     config.http.customizers.push(
         c => {
             let registered = false;
@@ -61,5 +61,4 @@ export const eventRelayPostProcessor: ConfigurationPostProcessor = async (config
             });
         },
     );
-    return config;
-};
+}

@@ -1,6 +1,7 @@
 import {Destination, HandlerContext, HttpClientOptions, logger} from "@atomist/automation-client";
 import {ExtensionPack, metadata} from "@atomist/sdm";
 import {EventRelayData} from "./event/eventRelay";
+import {eventRelayPostProcessor} from "./support/customizer";
 /**
  * Represents the destination for an event relayer
  *
@@ -82,6 +83,7 @@ export const eventRelaySupport = (
         requiredConfigurationValues: [],
         configure: sdm => {
             sdm.configuration.sdm.eventRelayers = options.eventRelayers;
+            eventRelayPostProcessor(sdm.configuration);
         },
     };
 };

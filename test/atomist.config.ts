@@ -17,7 +17,7 @@
 import {
     addressEvent,
     automationClientInstance,
-    Configuration, guid, HttpClientOptions, Issue,
+    Configuration, guid, HttpClientOptions, Issue, logger,
 } from "@atomist/automation-client";
 import {
     SoftwareDeliveryMachine,
@@ -58,7 +58,7 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
                 delete payload.headers["content-length"];
                 return {
                     ...payload.headers as HttpClientOptions["headers"],
-                    host: sdm.configuration.sdm.git.webhookdest,
+                    "x-forwarded-host": sdm.configuration.sdm.git.url,
                 };
             },
         },
@@ -108,9 +108,5 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
 export const configuration: Configuration = {
     postProcessors: [
         configureSdm(machineMaker),
-        /**
-         * Register Event Relay customizer
-         */
-        eventRelayPostProcessor,
     ],
 };
