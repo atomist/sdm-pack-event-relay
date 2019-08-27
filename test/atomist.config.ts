@@ -56,10 +56,6 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
         targetEvent: {
             eventType: "public",
             eventTarget: sdm.configuration.sdm.git.webhookdest,
-            headers: (ctx, payload) => {
-                payload.headers = purgeCommonHeaders(payload.headers as HttpClientOptions["headers"]);
-                return payload.headers as HttpClientOptions["headers"];
-            },
         },
     };
 
@@ -83,14 +79,13 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
     //                 payload.body,
     //                 payload.headers as HttpClientOptions["headers"],
     //             );
-    //             payload.headers = purgeCommonHeaders(payload.headers as HttpClientOptions["headers"]);
     //             return payload.headers as HttpClientOptions["headers"];
     //         },
     //     },
     // };
 
     /**
-     * Define a test EventRelayer and Scrubber
+     * Define a test EventRelayer and Processor
      */
     interface TestJiraData {
         webhookEvent: string;

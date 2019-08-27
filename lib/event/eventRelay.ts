@@ -15,6 +15,7 @@ import {toArray} from "@atomist/sdm-core/lib/util/misc/array";
 import {IncomingHttpHeaders} from "http";
 import _ = require("lodash");
 import {EventRelayer} from "../eventRelay";
+import {purgeCommonHeaders} from "../support/util";
 
 export interface EventRelayData<DATA = any> {
     body: DATA;
@@ -55,10 +56,11 @@ export class EventRelayHandler implements HandleEvent<any> {
                         await relayer.processor(event.data) : event.data;
 
                     if (relayer.processor) {
-                        logger.debug(`Successfully scrubbed data with relayer ${relayer.name}'s scrubber`);
+                        logger.debug(
+                            `Successfully processed data with relayer ${relayer.name}'s processor`);
                     }
                 } catch (e) {
-                    const message = `Failed to scrub data with relayer ${relayer.name}.  Error => ${e}`;
+                    const message = `Failed to processor data with relayer ${relayer.name}.  Error => ${e}`;
                     logger.error(message);
                     reject({ code: 1, message });
                 }
@@ -87,12 +89,19 @@ export class EventRelayHandler implements HandleEvent<any> {
  * @param ctx
  */
 async function sendData(relayer: EventRelayer, data: EventRelayData, ctx: HandlerContext): Promise<void> {
+    // Process event based on targetEvent.eventType
     if (relayer.targetEvent.eventType === "public") {
-        await sdmPostWebhook(relayer.targetEvent.eventTarget, await relayer.targetEvent.headers(ctx, data), data.body);
+        await sdmPostWebhook(
+            relayer.targetEvent.eventTarget,
+            relayer.targetEvent.headers ?
+                await relayer.targetEvent.headers(ctx, data) : purgeCommonHeaders(data.headers as HttpClientOptions["headers"]),
+            data.body,
+        );
     } else if (relayer.targetEvent.eventType === "publicDynamic") {
         await sdmPostWebhook(
             await relayer.targetEvent.eventTarget(ctx, data),
-            await relayer.targetEvent.headers(ctx, data),
+            relayer.targetEvent.headers ?
+                await relayer.targetEvent.headers(ctx, data) : purgeCommonHeaders(data.headers as HttpClientOptions["headers"]),
             data.body,
         );
     } else if (relayer.targetEvent.eventType === "private") {
