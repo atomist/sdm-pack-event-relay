@@ -50,7 +50,6 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
         processor: async payload => {
             // "x-github-event"
             (payload.body as any)["x-bitbucket-type"] = payload.headers["x-event-key"];
-            // (payload.body as any)["x-bitbucket-type"] = payload.headers["x-request-id"];
             return {body: payload.body, headers: payload.headers};
         },
         targetEvent: {
@@ -67,7 +66,7 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
     //     test: payload => !!payload.body.actor && !!payload.body.date && !!payload.body.eventKey,
     //     processor: async payload => {
     //         // "x-github-event"
-    //         (payload.body as any)["x-bitbucket-type"] = payload.headers["x-request-id"];
+    //         (payload.body as any)["x-bitbucket-type"] = payload.headers["x-event-key"];
     //         return {body: payload.body, headers: payload.headers};
     //     },
     //     targetEvent: {
