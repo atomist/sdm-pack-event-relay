@@ -13,6 +13,7 @@ import {EventHandler} from "@atomist/automation-client/lib/decorators";
 import {HandleEvent} from "@atomist/automation-client/lib/HandleEvent";
 import {toArray} from "@atomist/sdm-core/lib/util/misc/array";
 import {IncomingHttpHeaders} from "http";
+import _ = require("lodash");
 import {EventRelayer} from "../eventRelay";
 
 export interface EventRelayData<DATA = any> {
@@ -46,12 +47,14 @@ export class EventRelayHandler implements HandleEvent<any> {
             }
 
             /**
-             * For each matching relayer, run scrubber if provided followed by send
+             * For each matching relayer, run processor if provided followed by send
              */
             for (const relayer of relayersForThisEvent) {
                 try {
-                    event.data.body = relayer.scrubber ? await relayer.scrubber(event.data.body) : event.data.body;
-                    if (relayer.scrubber) {
+                    event.data = relayer.processor ?
+                        await relayer.processor(event.data) : event.data;
+
+                    if (relayer.processor) {
                         logger.debug(`Successfully scrubbed data with relayer ${relayer.name}'s scrubber`);
                     }
                 } catch (e) {
@@ -85,7 +88,7 @@ export class EventRelayHandler implements HandleEvent<any> {
  */
 async function sendData(relayer: EventRelayer, data: EventRelayData, ctx: HandlerContext): Promise<void> {
     if (relayer.targetEvent.eventType === "public") {
-        await sdmPostWebhook(relayer.targetEvent.eventTarget, await relayer.targetEvent.headers(ctx, data), data);
+        await sdmPostWebhook(relayer.targetEvent.eventTarget, await relayer.targetEvent.headers(ctx, data), data.body);
     } else if (relayer.targetEvent.eventType === "publicDynamic") {
         await sdmPostWebhook(
             await relayer.targetEvent.eventTarget(ctx, data),
@@ -115,19 +118,21 @@ async function sdmPostWebhook(
     try {
         for (const dest of toArray(url)) {
             const httpClient = config.http.client.factory.create(dest);
+
             const result = await httpClient.exchange(
-                dest, {
+                dest,
+                {
                     method: HttpMethod.Post,
                     body: JSON.stringify(payload),
-                    headers: {
-                        ["Content-Type"]: "application/json" },
-                        ...headers,
-                    },
-                );
+                    headers: _.merge({
+                        ["Content-Type"]: "application/json",
+                    }, headers),
+                });
             logger.debug(`sdmPostWebhook Result: ${JSON.stringify(result.body)}`);
         }
     } catch (e) {
-        logger.error("sdmPostWebhook:  Error! Failed to send webhook.  Failure: " + e.message);
+        const correlationId = _.get(e, "response.headers.x-atomist-correlation-id", "Not Defined");
+        logger.error(`sdmPostWebhook:  Error! Failed to send webhook (correlation-id: ${correlationId}).  Failure => ${e.message}`);
         throw new Error(e);
     }
 }

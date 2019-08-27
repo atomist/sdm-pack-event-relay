@@ -10,7 +10,7 @@ import {eventRelayPostProcessor} from "./support/customizer";
  * via an SDM.
  *
  * Public types require an eventTarget to be set to the ingestion URL.  The event relayer will send these messages
- * via HTTPS to webhooks.atomist.com.  You can optionally supply additional headers for public events that will be used
+ * via HTTPS to webhook.atomist.com.  You can optionally supply additional headers for public events that will be used
  * when posting data.  Examples of headers you may need to provide would be event type headers or auth information.
  *
  * Private types are sent over the internal SDM websocket.
@@ -66,9 +66,9 @@ export interface EventRelayer<DATA = any> {
     targetEvent: EventRelayDestination<EventRelayData<DATA>>;
 
     /**
-     * Optionally supply a scrubber to munge data prior to relay
+     * Optionally supply a processor to modify data prior to relay
      */
-    scrubber?: (data: DATA) => Promise<DATA>;
+    processor?: (payload: EventRelayData<DATA>) => Promise<EventRelayData<DATA>>;
 }
 
 interface EventRelaySupportOptions {

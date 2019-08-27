@@ -16,8 +16,8 @@
 
 import {
     addressEvent,
-    automationClientInstance,
-    Configuration, guid, HttpClientOptions, Issue, logger,
+    Configuration, guid,
+    HttpClientOptions,
 } from "@atomist/automation-client";
 import {
     SoftwareDeliveryMachine,
@@ -27,9 +27,8 @@ import {
     configureSdm,
     createSoftwareDeliveryMachine,
 } from "@atomist/sdm-core";
-import {EventRelayData} from "../lib/event/eventRelay";
 import {EventRelayer, eventRelaySupport} from "../lib/eventRelay";
-import {eventRelayPostProcessor} from "../lib/support/customizer";
+import {addAtomistSignatureHeader, purgeCommonHeaders} from "../lib/support/util";
 
 export function machineMaker(config: SoftwareDeliveryMachineConfiguration): SoftwareDeliveryMachine {
 
@@ -45,24 +44,50 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
         actor: any;
         date: string;
     }
-
     const bitbucketRelay: EventRelayer<BitbucketTestData> = {
         name: "bitbucketRelay",
         test: payload => !!payload.body.actor && !!payload.body.date && !!payload.body.eventKey,
+        processor: async payload => {
+            // "x-github-event"
+            (payload.body as any)["x-bitbucket-type"] = payload.headers["x-event-key"];
+            // (payload.body as any)["x-bitbucket-type"] = payload.headers["x-request-id"];
+            return {body: payload.body, headers: payload.headers};
+        },
         targetEvent: {
             eventType: "public",
             eventTarget: sdm.configuration.sdm.git.webhookdest,
             headers: (ctx, payload) => {
-                delete payload.headers.host;
-                delete payload.headers.expect;
-                delete payload.headers["content-length"];
-                return {
-                    ...payload.headers as HttpClientOptions["headers"],
-                    "x-forwarded-host": sdm.configuration.sdm.git.url,
-                };
+                payload.headers = purgeCommonHeaders(payload.headers as HttpClientOptions["headers"]);
+                return payload.headers as HttpClientOptions["headers"];
             },
         },
     };
+
+    /**
+     * Message digest variant
+     */
+    // const bitbucketRelay: EventRelayer<BitbucketTestData> = {
+    //     name: "bitbucketRelay",
+    //     test: payload => !!payload.body.actor && !!payload.body.date && !!payload.body.eventKey,
+    //     processor: async payload => {
+    //         // "x-github-event"
+    //         (payload.body as any)["x-bitbucket-type"] = payload.headers["x-request-id"];
+    //         return {body: payload.body, headers: payload.headers};
+    //     },
+    //     targetEvent: {
+    //         eventType: "public",
+    //         eventTarget: sdm.configuration.sdm.git.webhookdest,
+    //         headers: (ctx, payload) => {
+    //             payload.headers = addAtomistSignatureHeader(
+    //                 sdm.configuration.sdm.git.key,
+    //                 payload.body,
+    //                 payload.headers as HttpClientOptions["headers"],
+    //             );
+    //             payload.headers = purgeCommonHeaders(payload.headers as HttpClientOptions["headers"]);
+    //             return payload.headers as HttpClientOptions["headers"];
+    //         },
+    //     },
+    // };
 
     /**
      * Define a test EventRelayer and Scrubber
@@ -84,8 +109,8 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
                 eventType: "private",
                 eventTarget: addressEvent("JiraIssue"),
             },
-            scrubber: async issue => {
-               issue.user.displayName = guid();
+            processor: async issue => {
+               issue.body.user.displayName = guid();
                return issue;
             },
     };
