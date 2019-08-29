@@ -3,14 +3,13 @@ import {
     EventFired,
     HandlerContext,
     HandlerResult,
-    HttpClientOptions,
     logger,
     Success,
 } from "@atomist/automation-client";
 import {EventHandler} from "@atomist/automation-client/lib/decorators";
 import {HandleEvent} from "@atomist/automation-client/lib/HandleEvent";
 import {EventRelayer} from "../eventRelay";
-import {purgeCommonHeaders, sdmPostWebhook} from "../support/util";
+import {sendData} from "../support/sendData";
 
 export interface EventRelayData<DATA = any> {
     body: DATA;
@@ -75,30 +74,3 @@ export class EventRelayHandler implements HandleEvent<any> {
         });
     }
 }
-
-/**
- * Based on the eventTarget type, use the appropriate transport to send data
- *
- * @param relayer
- * @param data
- * @param ctx
- */
-export async function sendData(relayer: EventRelayer, data: EventRelayData, ctx: HandlerContext): Promise<void> {
-    // Process event based on targetEvent.eventType
-    if (relayer.targetEvent.eventType === "public") {
-        await sdmPostWebhook(
-            typeof relayer.targetEvent.eventTarget === "string" || Array.isArray(relayer.targetEvent.eventTarget) ?
-                relayer.targetEvent.eventTarget : await relayer.targetEvent.eventTarget(ctx, data),
-            relayer.targetEvent.headers ?
-                await relayer.targetEvent.headers(ctx, data) : purgeCommonHeaders(data.headers),
-            data.body,
-        );
-    } else if (relayer.targetEvent.eventType === "private") {
-        await ctx.messageClient.send(
-            data.body,
-                typeof relayer.targetEvent.eventTarget === "object" || Array.isArray(relayer.targetEvent.eventTarget)
-                ? relayer.targetEvent.eventTarget : await relayer.targetEvent.eventTarget(ctx, data),
-        );
-    }
-}
-

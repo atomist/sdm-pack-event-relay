@@ -2,7 +2,8 @@ import * as autoClient from "@atomist/automation-client";
 import {fakeContext} from "@atomist/sdm";
 import * as assert from "power-assert";
 import * as sinon from "sinon";
-import {EventRelayData, sendData} from "../../lib/event/eventRelay";
+import {EventRelayData} from "../../lib/event/eventRelay";
+import {sendData} from "../../lib/support/sendData";
 import * as util from "../../lib/support/util";
 import {createFakeRelay, fakeHeaders, FakeRelayerTestData} from "../utils/fakeRelayer.test";
 

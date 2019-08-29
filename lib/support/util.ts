@@ -3,7 +3,7 @@ import {toArray} from "@atomist/sdm-core/lib/util/misc/array";
 import * as crypto from "crypto";
 import * as _ from "lodash";
 
-export function createHmacSignature(key: string, payload: any, algorithm = "sha1"): string {
+export function createHmacSignature(key: string, payload: any, algorithm: string = "sha1"): string {
     const digest = crypto.createHmac(algorithm, key);
     digest.update(JSON.stringify(payload));
     return digest.digest("hex");
