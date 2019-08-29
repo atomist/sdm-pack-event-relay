@@ -24,7 +24,9 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "dependencies": {
-    "lodash": "^4.17.15"
+    "@types/sinon": "^7.0.13",
+    "lodash": "^4.17.15",
+    "sinon": "^7.4.1"
   },
   "peerDependencies": {
     "@atomist/automation-client": "*",

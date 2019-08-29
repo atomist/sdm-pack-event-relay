@@ -2,6 +2,9 @@ import {Destination, HandlerContext, HttpClientOptions, logger} from "@atomist/a
 import {ExtensionPack, metadata} from "@atomist/sdm";
 import {EventRelayData} from "./event/eventRelay";
 import {eventRelayPostProcessor} from "./support/customizer";
+
+type EventTargetPublic<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<string | string[]>;
+type EventTargetPrivate<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<Destination | Destination[]>;
 /**
  * Represents the destination for an event relayer
  *
@@ -11,41 +14,20 @@ import {eventRelayPostProcessor} from "./support/customizer";
  *
  * Public types require an eventTarget to be set to the ingestion URL.  The event relayer will send these messages
  * via HTTPS to webhook.atomist.com.  You can optionally supply additional headers for public events that will be used
- * when posting data.  Examples of headers you may need to provide would be event type headers or auth information.
+ * when posting data.  Examples of headers you may need to provide would be event type headers or auth information.  If
+ * no headers function supplied the purgeCommonHeaders function will automatically be applied
  *
  * Private types are sent over the internal SDM websocket.
  */
 type EventRelayDestination<DATA> =
-    /**
-     * Use this variant for public targets with a static url list
-     */
     | {
         eventType: "public",
-        eventTarget: string | string[],
+        eventTarget: string | string[] | EventTargetPublic<DATA>,
         headers?: (ctx: HandlerContext, payload: DATA) => HttpClientOptions["headers"],
     }
-    /**
-     * Use this variant for public targets with a url list that is dynamically built
-     * allowing for GraphQL queries to lookup provider details
-     */
-    | {
-        eventType: "publicDynamic",
-        eventTarget: (ctx: HandlerContext, payload: DATA) => Promise<string[]>,
-        headers?: (ctx: HandlerContext, payload: DATA) => HttpClientOptions["headers"],
-    }
-    /**
-     * Use this variant for private targets with a static destination(s)
-     */
     | {
         eventType: "private",
-        eventTarget: Destination | Destination[],
-    }
-    /**
-     * Use this variant for private targets with dynamic destinations
-     */
-    | {
-        eventType: "privateDynamic",
-        eventTarget: (ctx: HandlerContext) => Promise<Destination | Destination[]>,
+        eventTarget: Destination | Destination[] | EventTargetPrivate<DATA>,
     };
 
 export interface EventRelayer<DATA = any> {
