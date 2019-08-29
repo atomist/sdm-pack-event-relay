@@ -27,6 +27,13 @@ const privateStaticTargetEvent: EventRelayer<FakeRelayerTestData>["targetEvent"]
     eventType: "private",
     eventTarget: addressEvent("fake"),
 };
+const privateStaticTargetEventMultiple: EventRelayer<FakeRelayerTestData>["targetEvent"] = {
+    eventType: "private",
+    eventTarget: [
+        addressEvent("fake1"),
+        addressEvent("fake2"),
+    ],
+};
 const privateDynamicTargetEvent: EventRelayer<FakeRelayerTestData>["targetEvent"] = {
     eventType: "private",
     eventTarget: async (ctx, payload)  => {
@@ -44,7 +51,14 @@ const privateDynamicTargetEventMultiple: EventRelayer<FakeRelayerTestData>["targ
 };
 
 export function createFakeRelay(
-    type: "publicStatic" | "publicDynamic" | "publicDynamicMultiple" | "privateStatic" | "privateDynamic" | "privateDynamicMultiple",
+    type:
+        "publicStatic" |
+        "publicDynamic" |
+        "publicDynamicMultiple" |
+        "privateStatic" |
+        "privateStaticMultiple" |
+        "privateDynamic" |
+        "privateDynamicMultiple",
 ): EventRelayer<FakeRelayerTestData> {
     let targetEvent: any;
     if (type === "publicStatic") {
@@ -55,6 +69,8 @@ export function createFakeRelay(
         targetEvent = publicDynamicTargetEventMultiple;
     } else if (type === "privateStatic") {
         targetEvent = privateStaticTargetEvent;
+    } else if (type === "privateStaticMultiple") {
+        targetEvent = privateStaticTargetEventMultiple;
     } else if (type === "privateDynamic") {
         targetEvent = privateDynamicTargetEvent;
     } else if (type === "privateDynamicMultiple") {

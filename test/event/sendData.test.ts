@@ -1,3 +1,4 @@
+import {Destination} from "@atomist/automation-client";
 import * as autoClient from "@atomist/automation-client";
 import {fakeContext} from "@atomist/sdm";
 import * as assert from "power-assert";
@@ -138,7 +139,7 @@ describe ("sendEvent", () => {
         });
     });
     describe("private events", () => {
-        it("should call messageClient", async () => {
+        it("should call messageClient for single static destination", async () => {
             const ctx = fakeContext();
             const a = sinon.stub(ctx.messageClient, "send");
             a.returns(undefined);
@@ -147,6 +148,44 @@ describe ("sendEvent", () => {
             assert(a.calledOnce);
             const args = a.getCall(0).args;
             assert(args[1].hasOwnProperty("userAgent"));
+        });
+        it("should call messageClient once for multiple static destination", async () => {
+            const ctx = fakeContext();
+            const a = sinon.stub(ctx.messageClient, "send");
+            a.returns(undefined);
+            await sendData(createFakeRelay("privateStaticMultiple"), data, ctx);
+            a.restore();
+
+            // Validate it was called with multiple destinations
+            const args = a.getCall(0).args;
+            assert((args[1] as Destination[]).filter(arg => arg.hasOwnProperty("userAgent")).length === 2);
+
+            // Validate send was called just once
+            assert(a.calledOnce);
+        });
+        it("should call messageClient for single dynamic destination", async () => {
+            const ctx = fakeContext();
+            const a = sinon.stub(ctx.messageClient, "send");
+            a.returns(undefined);
+            await sendData(createFakeRelay("privateDynamic"), data, ctx);
+            a.restore();
+            assert(a.calledOnce);
+            const args = a.getCall(0).args;
+            assert(args[1].hasOwnProperty("userAgent"));
+        });
+        it("should call messageClient once for multiple dynamic destinations", async () => {
+            const ctx = fakeContext();
+            const a = sinon.stub(ctx.messageClient, "send");
+            a.returns(undefined);
+            await sendData(createFakeRelay("privateDynamicMultiple"), data, ctx);
+            a.restore();
+
+            // Validate it was called with multiple destinations
+            const args = a.getCall(0).args;
+            assert((args[1] as Destination[]).filter(arg => arg.hasOwnProperty("userAgent")).length === 2);
+
+            // Validate send was called just once
+            assert(a.calledOnce);
         });
     });
 });
