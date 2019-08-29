@@ -1,30 +1,14 @@
-import {Destination} from "@atomist/automation-client";
 import * as autoClient from "@atomist/automation-client";
 import {fakeContext} from "@atomist/sdm";
 import * as assert from "power-assert";
 import * as sinon from "sinon";
 import {EventRelayData, sendData} from "../../lib/event/eventRelay";
 import * as util from "../../lib/support/util";
-import * as fakeHttpClients from "../utils/fakeHttpFactor.test";
-import {createFakeRelay} from "../utils/fakeRelayer.test";
-
-interface FakeTestData {
-    foo: string;
-    bar: string;
-}
-
-const fakeHeaders: autoClient.HttpClientOptions["headers"] = {
-    "host": "fakehost.com",
-    "authorization": "Bearer AAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    "expect": "100-continue",
-    "content-length": "1024",
-    "user-agent": "fake useragent",
-    "accept": "application/json",
-};
+import {createFakeRelay, fakeHeaders, FakeRelayerTestData} from "../utils/fakeRelayer.test";
 
 // Create an event body
-const data: EventRelayData<FakeTestData> = {
-    body: { foo: "yea", bar: "fake data"},
+const data: EventRelayData<FakeRelayerTestData> = {
+    body: { eventKey: "test", actor: "test", date: "test"},
     headers: fakeHeaders,
 };
 
@@ -94,49 +78,6 @@ describe ("sendEvent", () => {
             const res = a.getCall(0).args[1];
             assert(res === fakeHeaders);
         });
-        it("should call sdmPostWebhook multiple times when multiple destinations are configured", async () => {
-            // Create a stub for configurationValue that returns a fake http client and set a spy on the client exchange function
-            const c = sinon.stub(autoClient, "configurationValue");
-            const fakeConfig = { http: { client: { factory: new fakeHttpClients.FakeHttpClientFactory() }}};
-            c.returns(fakeConfig);
-            const d = sinon.spy(fakeHttpClients.FakeHttpClient.prototype, "exchange");
-
-            // Create a context
-            const ctx = fakeContext();
-
-            // Setup a new relay and set the event target to multiple
-            const relay = createFakeRelay("publicDynamicMultiple");
-
-            // Run send data
-            await sendData(relay, data, ctx);
-            c.restore();
-            d.restore();
-
-            // Expect that httpClient.exchange was called twice to send to multiple locations
-            assert(d.calledTwice);
-        });
-        it("should call sdmPostWebhook multiple times when multiple destinations are configured via dynamic eventTarget function", async () => {
-            // Create a stub for configurationValue that returns a fake http client and set a spy on the client exchange function
-            const c = sinon.stub(autoClient, "configurationValue");
-            const fakeConfig = { http: { client: { factory: new fakeHttpClients.FakeHttpClientFactory() }}};
-            c.returns(fakeConfig);
-            const d = sinon.spy(fakeHttpClients.FakeHttpClient.prototype, "exchange");
-
-            // Create a context
-            const ctx = fakeContext();
-
-            // Setup a new relay and set the event target to multiple
-            const relay = createFakeRelay("publicStatic");
-            relay.targetEvent.eventTarget = async (context, payload) => ["fake.com/test", "fake1.com/test", "fake2.com/test"];
-
-            // Run send data
-            await sendData(relay, data, ctx);
-            c.restore();
-            d.restore();
-
-            // Expect that httpClient.exchange was called twice to send to multiple locations
-            assert(d.calledThrice);
-        });
     });
     describe("private events", () => {
         it("should call messageClient for single static destination", async () => {
@@ -158,7 +99,7 @@ describe ("sendEvent", () => {
 
             // Validate it was called with multiple destinations
             const args = a.getCall(0).args;
-            assert((args[1] as Destination[]).filter(arg => arg.hasOwnProperty("userAgent")).length === 2);
+            assert((args[1] as autoClient.Destination[]).filter(arg => arg.hasOwnProperty("userAgent")).length === 2);
 
             // Validate send was called just once
             assert(a.calledOnce);
@@ -182,7 +123,7 @@ describe ("sendEvent", () => {
 
             // Validate it was called with multiple destinations
             const args = a.getCall(0).args;
-            assert((args[1] as Destination[]).filter(arg => arg.hasOwnProperty("userAgent")).length === 2);
+            assert((args[1] as autoClient.Destination[]).filter(arg => arg.hasOwnProperty("userAgent")).length === 2);
 
             // Validate send was called just once
             assert(a.calledOnce);

@@ -1,7 +1,16 @@
 import {addressEvent} from "@atomist/automation-client";
 import {EventRelayer} from "../../lib/eventRelay";
 
-interface FakeRelayerTestData {
+export const fakeHeaders: Record<string, string> = {
+    "host": "fakehost.com",
+    "authorization": "Bearer AAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "expect": "100-continue",
+    "content-length": "1024",
+    "user-agent": "fake useragent",
+    "accept": "application/json",
+};
+
+export interface FakeRelayerTestData {
     eventKey: string;
     actor: any;
     date: string;
