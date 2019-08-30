@@ -2,19 +2,46 @@
   <img src="https://images.atomist.com/sdm/SDM-Logo-Dark.png">
 </p>
 
-# @atomist-seeds/sdm-pack
+# @ipcrm/sdm-pack-event-relay
 
-[![atomist sdm goals](http://badge.atomist.com/T29E48P34/atomist-seeds/sdm-pack/24939d09-fe00-4a7a-8d52-0fc4c9672100)](https://app.atomist.com/workspace/T29E48P34)
-[![npm version](https://img.shields.io/npm/v/@atomist-seeds/sdm-pack.svg)](https://www.npmjs.com/package/@atomist-seeds/sdm-pack)
+This extension pack allows an SDM to function as an event relay between event sources and Cortex.  Reasons for doing
+this include air-gapped services and needing to "scrub" data from outbound payloads.
 
-A starting point for an extension pack for an [Atomist][atomist]
-software delivery machine (SDM).
+An example configuration for a relay configuration:
 
-Software delivery machines enable you to control your delivery process
-in code.  Think of it as an API for your software delivery.  See the
-[Atomist documentation][atomist-doc] for more information on the
-concept of a software delivery machine and how to create and develop
-an SDM.
+```typescript
+ const bitbucketRelay: EventRelayer<BitbucketTestData> = {
+     name: "bitbucketRelay",
+     test: payload => !!payload.body.actor && !!payload.body.date && !!payload.body.eventKey,
+     processor: async payload => {
+         (payload.body as any)["x-bitbucket-type"] = payload.headers["x-event-key"];
+         return {body: payload.body, headers: payload.headers};
+     },
+     targetEvent: {
+         eventType: "public",
+         eventTarget: sdm.configuration.sdm.git.webhookdest,
+         headers: (ctx, payload) => {
+             payload.headers = addAtomistSignatureHeader(
+                 sdm.configuration.sdm.git.key,
+                 payload.body,
+                 payload.headers as HttpClientOptions["headers"],
+             );
+             return payload.headers as HttpClientOptions["headers"];
+         },
+     },
+ };
+
+sdm.addExtensionPacks(
+    eventRelaySupport({
+        eventRelayers: [
+            bitbucketRelay,
+        ],
+    }),
+);
+``` 
+
+See the `EventRelayer` interface for details on creating EventRelayer(s).  For details on the extension pack
+configuration, see the `eventRelaySupport` type documentation.
 
 [atomist-doc]: https://docs.atomist.com/ (Atomist Documentation)
 
