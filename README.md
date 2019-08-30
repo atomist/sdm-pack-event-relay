@@ -2,7 +2,7 @@
   <img src="https://images.atomist.com/sdm/SDM-Logo-Dark.png">
 </p>
 
-# @ipcrm/sdm-pack-event-relay
+# @atomist/sdm-pack-event-relay
 
 This extension pack allows an SDM to function as an event relay between event sources and Cortex.  Reasons for doing
 this include air-gapped services and needing to "scrub" data from outbound payloads.

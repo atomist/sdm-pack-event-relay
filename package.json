@@ -1,19 +1,20 @@
 {
-  "name": "@ipcrm/sdm-pack-event-relay",
-  "version": "0.1.0",
-  "description": "my new project",
+  "name": "@atomist/sdm-pack-event-relay",
+  "version": "0.0.1",
+  "description": "Atomist SDM Pack Event Relay",
   "author": {
-    "name": "ipcrm",
-    "email": "mcadorette@gmail.com"
+      "name": "Atomist",
+          "email": "support@atomist.com",
+          "url": "https://atomist.com/"
   },
   "license": "Apache-2.0",
-  "homepage": "https://github.com/ipcrm/sdm-pack-event-relay#readme",
+  "homepage": "https://github.com/atomist/sdm-pack-event-relay#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ipcrm/sdm-pack-event-relay.git"
+    "url": "https://github.com/atomist/sdm-pack-event-relay.git"
   },
   "bugs": {
-    "url": "https://github.com/ipcrm/sdm-pack-event-relay/issues"
+    "url": "https://github.com/atomist/sdm-pack-event-relay/issues"
   },
   "keywords": [
     "atomist",
