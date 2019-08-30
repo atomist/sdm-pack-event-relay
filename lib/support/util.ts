@@ -15,7 +15,7 @@ export function addAtomistSignatureHeader(
     headers: HttpClientOptions["headers"],
     algorithm: "sha1" | "sha256" = "sha1",
 ): HttpClientOptions["headers"] {
-    headers["x-hub-signature"] = `sha1=${createHmacSignature(key, payload, algorithm)}`;
+    headers["x-hub-signature"] = `${algorithm}=${createHmacSignature(key, payload, algorithm)}`;
     return headers;
 }
 
