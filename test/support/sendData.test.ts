@@ -38,7 +38,7 @@ describe ("sendEvent", () => {
             const a = sandbox.stub(util, "sdmPostWebhook");
             a.returns(undefined);
             const ctx = fakeContext();
-            const r = createFakeRelay("publicStatic")
+            const r = createFakeRelay("publicStatic");
             await sendData(r, data, ctx);
             a.restore();
             assert(a.calledOnce);
