@@ -16,8 +16,7 @@ export interface EventRelayData<DATA = any> {
     headers: Record<string, string>;
 }
 
-// TODO: I don't want a graphQL subscription here, but I have to have it or I get errors
-@EventHandler("Handle eventRelay events", "subscription Placeholder { HerokuApp { app } }")
+@EventHandler("Handle eventRelay events", "subscription Placeholder { ok }")
 export class EventRelayHandler implements HandleEvent<any> {
     public handle(event: EventFired<EventRelayData>, ctx: HandlerContext): Promise<HandlerResult> {
         return new Promise<HandlerResult>(async (resolve, reject) => {
