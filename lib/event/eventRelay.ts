@@ -6,10 +6,10 @@ import {
     logger,
     Success,
 } from "@atomist/automation-client";
-import {EventHandler} from "@atomist/automation-client/lib/decorators";
-import {HandleEvent} from "@atomist/automation-client/lib/HandleEvent";
-import {EventRelayer} from "../eventRelay";
-import {sendData} from "../support/sendData";
+import { EventHandler } from "@atomist/automation-client/lib/decorators";
+import { HandleEvent } from "@atomist/automation-client/lib/HandleEvent";
+import { EventRelayer } from "../eventRelay";
+import { sendData } from "../support/sendData";
 
 export interface EventRelayData<DATA = any> {
     body: DATA;

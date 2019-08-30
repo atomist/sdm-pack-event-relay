@@ -1,10 +1,16 @@
-import {EventIncoming, guid} from "@atomist/automation-client";
-import {fakeContext} from "@atomist/sdm";
+import {
+    EventIncoming,
+    guid,
+} from "@atomist/automation-client";
+import { fakeContext } from "@atomist/sdm";
 import * as assert from "power-assert";
 import * as sinon from "sinon";
-import {EventRelayHandler} from "../../lib/event/eventRelay";
+import { EventRelayHandler } from "../../lib/event/eventRelay";
 import * as sendData from "../../lib/support/sendData";
-import {createFakeRelay, fakeHeaders} from "../testUtils/fakeRelayer.test";
+import {
+    createFakeRelay,
+    fakeHeaders,
+} from "../testUtils/fakeRelayer.test";
 
 const testEventData: EventIncoming = {
     data: {

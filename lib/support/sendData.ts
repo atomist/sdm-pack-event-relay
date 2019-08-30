@@ -1,7 +1,10 @@
-import {HandlerContext} from "@atomist/automation-client";
-import {EventRelayData} from "../event/eventRelay";
-import {EventRelayer} from "../eventRelay";
-import {purgeCommonHeaders, sdmPostWebhook} from "./util";
+import { HandlerContext } from "@atomist/automation-client";
+import { EventRelayData } from "../event/eventRelay";
+import { EventRelayer } from "../eventRelay";
+import {
+    purgeCommonHeaders,
+    sdmPostWebhook,
+} from "./util";
 
 /**
  * Based on the eventTarget type, use the appropriate transport to send data

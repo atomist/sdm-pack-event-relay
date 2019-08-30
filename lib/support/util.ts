@@ -1,5 +1,11 @@
-import {Configuration, configurationValue, HttpClientOptions, HttpMethod, logger} from "@atomist/automation-client";
-import {toArray} from "@atomist/sdm-core/lib/util/misc/array";
+import {
+    Configuration,
+    configurationValue,
+    HttpClientOptions,
+    HttpMethod,
+    logger,
+} from "@atomist/automation-client";
+import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import * as crypto from "crypto";
 import * as _ from "lodash";
 

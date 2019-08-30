@@ -1,4 +1,9 @@
-import {HttpClient, HttpClientFactory, HttpClientOptions, HttpResponse} from "@atomist/automation-client";
+import {
+    HttpClient,
+    HttpClientFactory,
+    HttpClientOptions,
+    HttpResponse,
+} from "@atomist/automation-client";
 
 // HTTP Client just used for testing
 export class FakeHttpClient implements HttpClient {

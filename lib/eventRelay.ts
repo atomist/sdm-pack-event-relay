@@ -1,7 +1,15 @@
-import {Destination, HandlerContext, HttpClientOptions, logger} from "@atomist/automation-client";
-import {ExtensionPack, metadata} from "@atomist/sdm";
-import {EventRelayData} from "./event/eventRelay";
-import {eventRelayPostProcessor} from "./support/customizer";
+import {
+    Destination,
+    HandlerContext,
+    HttpClientOptions,
+    logger,
+} from "@atomist/automation-client";
+import {
+    ExtensionPack,
+    metadata,
+} from "@atomist/sdm";
+import { EventRelayData } from "./event/eventRelay";
+import { eventRelayPostProcessor } from "./support/customizer";
 
 type EventTargetPublic<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<string | string[]>;
 type EventTargetPrivate<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<Destination | Destination[]>;

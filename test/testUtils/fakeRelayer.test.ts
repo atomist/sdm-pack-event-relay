@@ -1,5 +1,5 @@
-import {addressEvent} from "@atomist/automation-client";
-import {EventRelayer} from "../../lib/eventRelay";
+import { addressEvent } from "@atomist/automation-client";
+import { EventRelayer } from "../../lib/eventRelay";
 
 export const fakeHeaders: Record<string, string> = {
     "host": "fakehost.com",

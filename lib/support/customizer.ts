@@ -7,11 +7,13 @@
 import {
     automationClientInstance,
     Configuration,
-    EventIncoming, guid, logger,
+    EventIncoming,
+    guid,
+    logger,
 } from "@atomist/automation-client";
-import {SoftwareDeliveryMachineConfiguration} from "@atomist/sdm";
-import {EventRelayHandler} from "../event/eventRelay";
-import {EventRelayer} from "../eventRelay";
+import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm";
+import { EventRelayHandler } from "../event/eventRelay";
+import { EventRelayer } from "../eventRelay";
 
 export function eventRelayPostProcessor(config: Configuration & SoftwareDeliveryMachineConfiguration): void {
     config.http.customizers.push(
