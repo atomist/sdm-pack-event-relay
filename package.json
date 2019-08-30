@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "description": "Atomist SDM Pack Event Relay",
   "author": {
-      "name": "Atomist",
-          "email": "support@atomist.com",
-          "url": "https://atomist.com/"
+    "name": "Atomist",
+    "email": "support@atomist.com",
+    "url": "https://atomist.com/"
   },
   "license": "Apache-2.0",
   "homepage": "https://github.com/atomist/sdm-pack-event-relay#readme",
@@ -30,14 +30,14 @@
     "sinon": "^7.4.1"
   },
   "peerDependencies": {
-    "@atomist/automation-client": "*",
-    "@atomist/sdm": "*",
-    "@atomist/sdm-core": "*"
+    "@atomist/automation-client": "^1.6.2",
+    "@atomist/sdm": "^1.6.1",
+    "@atomist/sdm-core": "^1.6.1"
   },
   "devDependencies": {
-    "@atomist/automation-client": "^1.6.3-master.20190821065818",
-    "@atomist/sdm": "^1.6.2-master.20190821222758",
-    "@atomist/sdm-core": "^1.6.2-master.20190822002319",
+    "@atomist/automation-client": "^1.6.2",
+    "@atomist/sdm": "^1.6.1",
+    "@atomist/sdm-core": "^1.6.1",
     "@types/mocha": "^5.2.7",
     "@types/power-assert": "^1.5.0",
     "espower-typescript": "^9.0.2",
