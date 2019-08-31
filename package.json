@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "description": "Atomist SDM Pack Event Relay",
   "author": {
-      "name": "Atomist",
-          "email": "support@atomist.com",
-          "url": "https://atomist.com/"
+    "name": "Atomist",
+    "email": "support@atomist.com",
+    "url": "https://atomist.com/"
   },
   "license": "Apache-2.0",
   "homepage": "https://github.com/atomist/sdm-pack-event-relay#readme",
@@ -49,7 +49,7 @@
     "ts-node": "^8.2.0",
     "tslint": "^5.17.0",
     "typedoc": "^0.14.2",
-    "typescript": "^3.5.1"
+    "typescript": "^3.5.3"
   },
   "directories": {
     "test": "test"
