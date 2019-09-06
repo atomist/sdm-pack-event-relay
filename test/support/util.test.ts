@@ -17,11 +17,7 @@
 import * as autoClient from "@atomist/automation-client";
 import * as assert from "power-assert";
 import * as sinon from "sinon";
-import {
-    addAtomistSignatureHeader,
-    createHmacSignature,
-    sdmPostWebhook,
-} from "../../lib/support/util";
+import {addAtomistSignatureHeader, createHmacSignature, redactObjectProperty, sdmPostWebhook} from "../../lib/support/util";
 import * as fakeHttpClients from "../testUtils/fakeHttpFactor.test";
 import { fakeHeaders } from "../testUtils/fakeRelayer.test";
 describe("util", () => {
@@ -113,6 +109,57 @@ describe("util", () => {
             c.restore();
             d.restore();
             assert.strictEqual(dests.length, d.callCount);
+        });
+    });
+    describe("redactObjectProperty", () => {
+        it ("should redact specified properties", async () => {
+            const testObject = {
+                a: "test",
+                b: "test",
+                c: {
+                    a: "test",
+                    b: "test",
+                },
+            };
+            const result = await redactObjectProperty(testObject, "b");
+
+            assert.strictEqual(result.a, "test");
+            assert.strictEqual(result.b, "Redacted");
+            assert.strictEqual(result.c.a, "test");
+            assert.strictEqual(result.c.b, "Redacted");
+        });
+        it ("should redact specified properties with supplied new value", async () => {
+            const testObject = {
+                a: "test",
+                b: "test",
+                c: {
+                    a: "test",
+                    b: "test",
+                },
+            };
+            const result = await redactObjectProperty(testObject, "b", "new value");
+            assert.strictEqual(result.a, "test");
+            assert.strictEqual(result.b, "new value");
+            assert.strictEqual(result.c.a, "test");
+            assert.strictEqual(result.c.b, "new value");
+        });
+        it ("should not exceed call stack with large object", async () => {
+            const t: any = {};
+            let i = 0;
+            while (i < 50000) {
+                t[`test${i}`] = {
+                    a: `value${i}`,
+                    b: `value ${i}`,
+                    c: {
+                        a: `value${i}`,
+                        b: `value${i}`,
+                    },
+                };
+                i++;
+            }
+            await redactObjectProperty(t, "b", "new value");
+            assert(t[Object.keys(t)[0]].b === "new value");
+            assert(t[Object.keys(t)[0]].c.b === "new value");
         });
     });
 });
