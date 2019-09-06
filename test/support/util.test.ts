@@ -166,5 +166,5 @@ describe("util", () => {
             assert(t[Object.keys(t)[0]].b === "new value");
             assert(t[Object.keys(t)[0]].c.b === "new value");
         });
-    });
+    }).timeout(5000);
 });
