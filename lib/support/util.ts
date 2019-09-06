@@ -88,3 +88,24 @@ export async function sdmPostWebhook(
         throw new Error(e);
     }
 }
+
+/**
+ * This utility function can be used to recursively "redact" a string property on the event object.
+ * Substituted property values will have a value of "Redacted" unless optional new value is supplied.
+ *
+ * @param {Object} o
+ * @param {string} property
+ * @param {string} newValue Optional value to replace the object property value with.
+ */
+export async function redactObjectProperty(o: any, property: string, newValue: string = "Redacted"): Promise<any> {
+    for (const v of Object.keys(o)) {
+        if (o[v] && typeof o[v] === "object") {
+            await redactObjectProperty(o[v], property, newValue);
+        } else if (o[v] && v.toLowerCase() === property.toLowerCase() && typeof o[v] === "string") {
+            o[v] = newValue;
+        } else if ((o[v] === null || o[v] === undefined) && v.toLowerCase() === property.toLowerCase()) {
+            o[v] = newValue;
+        }
+    }
+    return o;
+}
