@@ -17,7 +17,12 @@
 import * as autoClient from "@atomist/automation-client";
 import * as assert from "power-assert";
 import * as sinon from "sinon";
-import {addAtomistSignatureHeader, createHmacSignature, redactObjectProperty, sdmPostWebhook} from "../../lib/support/util";
+import {
+    addAtomistSignatureHeader,
+    createHmacSignature,
+    redactObjectProperty,
+    sdmPostWebhook,
+} from "../../lib/support/util";
 import * as fakeHttpClients from "../testUtils/fakeHttpFactor.test";
 import { fakeHeaders } from "../testUtils/fakeRelayer.test";
 describe("util", () => {
