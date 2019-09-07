@@ -97,10 +97,10 @@ export async function sdmPostWebhook(
  * @param {string} property
  * @param {string} newValue Optional value to replace the object property value with.
  */
-export async function redactObjectProperty(o: any, property: string, newValue: string = "Redacted"): Promise<any> {
+export function redactObjectProperty(o: any, property: string, newValue: string = "Redacted"): any {
     for (const v of Object.keys(o)) {
         if (o[v] && typeof o[v] === "object") {
-            await redactObjectProperty(o[v], property, newValue);
+            redactObjectProperty(o[v], property, newValue);
         } else if (o[v] && v.toLowerCase() === property.toLowerCase() && typeof o[v] === "string") {
             o[v] = newValue;
         } else if ((o[v] === null || o[v] === undefined) && v.toLowerCase() === property.toLowerCase()) {
