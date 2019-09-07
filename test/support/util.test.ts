@@ -117,7 +117,7 @@ describe("util", () => {
         });
     });
     describe("redactObjectProperty", () => {
-        it ("should redact specified properties", async () => {
+        it("should redact specified properties", async () => {
             const testObject = {
                 a: "test",
                 b: "test",
@@ -133,7 +133,7 @@ describe("util", () => {
             assert.strictEqual(result.c.a, "test");
             assert.strictEqual(result.c.b, "Redacted");
         });
-        it ("should redact specified properties with supplied new value", async () => {
+        it("should redact specified properties with supplied new value", () => {
             const testObject = {
                 a: "test",
                 b: "test",
@@ -142,29 +142,59 @@ describe("util", () => {
                     b: "test",
                 },
             };
-            const result = await redactObjectProperty(testObject, "b", "new value");
+            const result = redactObjectProperty(testObject, "b", "new value");
             assert.strictEqual(result.a, "test");
             assert.strictEqual(result.b, "new value");
             assert.strictEqual(result.c.a, "test");
             assert.strictEqual(result.c.b, "new value");
         });
-        it ("should not exceed call stack with large object", async () => {
+        it("should not exceed call stack with large object", () => {
             const t: any = {};
             let i = 0;
-            while (i < 50000) {
+            while (i < 10000) {
+                const f: any = {};
+                let n = 0;
+                while (n < 300) {
+                    f[`${f}`] = {
+                        a: {
+                            b: "value",
+                            c: {
+                                b: "value",
+                                c: {
+                                    b: "value",
+                                    c: {
+                                        b: "value",
+                                        c: {
+                                            b: "value",
+                                            c: {
+                                                b: "value",
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    };
+                    n++;
+                }
                 t[`test${i}`] = {
                     a: `value${i}`,
                     b: `value ${i}`,
                     c: {
                         a: `value${i}`,
                         b: `value${i}`,
+                        c: {
+                            a: `value${i}`,
+                            b: `value${i}`,
+                        },
+                        d: f,
                     },
                 };
                 i++;
             }
-            await redactObjectProperty(t, "b", "new value");
+            redactObjectProperty(t, "b", "new value");
             assert(t[Object.keys(t)[0]].b === "new value");
             assert(t[Object.keys(t)[0]].c.b === "new value");
-        });
-    }).timeout(5000);
+        }).timeout(2000);
+    });
 });
