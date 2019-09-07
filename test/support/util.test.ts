@@ -195,6 +195,6 @@ describe("util", () => {
             redactObjectProperty(t, "b", "new value");
             assert(t[Object.keys(t)[0]].b === "new value");
             assert(t[Object.keys(t)[0]].c.b === "new value");
-        }).timeout(2000);
+        }).timeout(4000);
     });
 });
