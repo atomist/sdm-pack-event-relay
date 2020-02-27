@@ -43,6 +43,11 @@ sdm.addExtensionPacks(
 See the `EventRelayer` interface for details on creating EventRelayer(s).  For details on the extension pack
 configuration, see the `eventRelaySupport` type documentation.
 
+## Disabling Authentication Requirement
+By default the event relay pack uses the Atomist API key configured to authorize incoming relay requests.  This key must
+be supplied in an authorization header (as a bearer token).  However, this is not appropriate for all use cases.  To
+disable the authentication requirement set `authRequired` to false in the `eventRelaySupport` options.
+
 [atomist-doc]: https://docs.atomist.com/ (Atomist Documentation)
 
 ## Getting started

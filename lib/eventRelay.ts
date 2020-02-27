@@ -18,7 +18,6 @@ import {
     Destination,
     HandlerContext,
     HttpClientOptions,
-    logger,
 } from "@atomist/automation-client";
 import {
     ExtensionPack,
@@ -79,6 +78,11 @@ export interface EventRelayer<DATA = any> {
 
 interface EventRelaySupportOptions {
     eventRelayers: Array<EventRelayer<any>>;
+
+    /**
+     * Should authorization be required when posting relay data?
+     */
+    authRequired?: boolean;
 }
 
 export const eventRelaySupport = (
@@ -89,7 +93,7 @@ export const eventRelaySupport = (
         requiredConfigurationValues: [],
         configure: sdm => {
             sdm.configuration.sdm.eventRelayers = options.eventRelayers;
-            eventRelayPostProcessor(sdm.configuration);
+            eventRelayPostProcessor(sdm.configuration, options.authRequired === undefined ? true : options.authRequired);
         },
     };
 };
