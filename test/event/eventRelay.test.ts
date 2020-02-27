@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,20 @@ import {
     EventIncoming,
     guid,
 } from "@atomist/automation-client";
-import { fakeContext } from "@atomist/sdm";
+import { metadataFromInstance } from "@atomist/automation-client/lib/internal/metadata/metadataReading";
+import { toFactory } from "@atomist/automation-client/lib/util/constructionUtils";
+import {
+    commandHandlerRegistrationToCommand,
+    eventHandlerRegistrationToEvent,
+    fakeContext,
+} from "@atomist/sdm";
+import { selfDescribeCommand } from "@atomist/sdm-core/lib/pack/info/SelfDescribe";
 import * as assert from "power-assert";
 import * as sinon from "sinon";
-import { EventRelayHandler } from "../../lib/event/eventRelay";
+import {
+    EventRelayHandler,
+    EventRelayHandlerRemovingAutomationMetadataProcessor,
+} from "../../lib/event/eventRelay";
 import * as sendData from "../../lib/support/sendData";
 import {
     createFakeRelay,
@@ -30,7 +40,7 @@ import {
 
 const testEventData: EventIncoming = {
     data: {
-        body: { eventKey: "test", actor: "test", date: "test"},
+        body: { eventKey: "test", actor: "test", date: "test" },
         headers: { ...fakeHeaders, "x-event-key": "testEventData" },
     },
     extensions: {
@@ -41,128 +51,148 @@ const testEventData: EventIncoming = {
     secrets: [],
 };
 
-describe("EventRelayHandler", async () => {
-    let sandbox: sinon.SinonSandbox;
-    before(() => {
-        sandbox = sinon.createSandbox();
-    });
-    after(() => {
-        sandbox.reset();
-        sandbox.restore();
-    });
-    afterEach(() => {
-        delete (global as any).__runningAutomationClient;
-    });
-    it("should find relevant relayers and call sendData", async () => {
-        // Setup Relayers and spies
-        const wontRunRelayer = createFakeRelay("publicStatic");
-        wontRunRelayer.test = () => false;
-        wontRunRelayer.name = "wontRunRelayer";
+describe("eventRelay", () => {
 
-        const relayers = [
-            createFakeRelay("publicStatic"),
-            wontRunRelayer,
-        ];
-        const shouldRunRelayerTest = sandbox.spy(relayers[0], "test");
-        const shouldRunRelayerProcessor = sandbox.spy(relayers[0], "processor");
-        const shouldNotRunRelayerProcessor = sandbox.spy(relayers[1], "processor");
+    describe("EventRelayHandlerRemovingAutomationMetadataProcessor", () => {
 
-        // Add Relayers to config
-        (global as any).__runningAutomationClient = {
-            configuration: {
-                sdm: {
-                    eventRelayers: relayers,
+        it("should not expose EventRelayHandler", async () => {
+            const md = metadataFromInstance(toFactory(eventHandlerRegistrationToEvent({}, EventRelayHandler))());
+            const resultMd = new EventRelayHandlerRemovingAutomationMetadataProcessor().process(md, {});
+            assert(resultMd.expose === false);
+        });
+
+        it("should not mutate other handlers", async () => {
+            const md = metadataFromInstance(toFactory(commandHandlerRegistrationToCommand(
+                {},
+                selfDescribeCommand({ configuration: { name: "test-sdm" }} as any)))());
+            const resultMd = new EventRelayHandlerRemovingAutomationMetadataProcessor().process(md, {});
+            assert.deepStrictEqual(resultMd, md);
+        });
+    });
+
+    describe("EventRelayHandler", async () => {
+        let sandbox: sinon.SinonSandbox;
+        before(() => {
+            sandbox = sinon.createSandbox();
+        });
+        after(() => {
+            sandbox.reset();
+            sandbox.restore();
+        });
+        afterEach(() => {
+            delete (global as any).__runningAutomationClient;
+        });
+        it("should find relevant relayers and call sendData", async () => {
+            // Setup Relayers and spies
+            const wontRunRelayer = createFakeRelay("publicStatic");
+            wontRunRelayer.test = () => false;
+            wontRunRelayer.name = "wontRunRelayer";
+
+            const relayers = [
+                createFakeRelay("publicStatic"),
+                wontRunRelayer,
+            ];
+            const shouldRunRelayerTest = sandbox.spy(relayers[0], "test");
+            const shouldRunRelayerProcessor = sandbox.spy(relayers[0], "processor");
+            const shouldNotRunRelayerProcessor = sandbox.spy(relayers[1], "processor");
+
+            // Add Relayers to config
+            (global as any).__runningAutomationClient = {
+                configuration: {
+                    sdm: {
+                        eventRelayers: relayers,
+                    },
                 },
-            },
-        };
+            };
 
-        // Stub out send data
-        const sD = sandbox.stub(sendData, "sendData");
-        sD.returns(Promise.resolve(undefined));
+            // Stub out send data
+            const sD = sandbox.stub(sendData, "sendData");
+            sD.returns(Promise.resolve(undefined));
 
-        // Setup fake context
-        const context = fakeContext();
+            // Setup fake context
+            const context = fakeContext();
 
-        // Setup stub for sendData
-        await new EventRelayHandler().handle(testEventData, context);
-        sD.restore();
+            // Setup stub for sendData
+            await EventRelayHandler.listener(testEventData, context, {});
+            sD.restore();
 
-        // Validate matching relayers were called, unmatching were not, and that sendData got called
-        assert(shouldRunRelayerTest.calledOnce);
-        assert(shouldRunRelayerProcessor.calledOnce);
-        assert(shouldNotRunRelayerProcessor.notCalled);
-        assert(sD.calledOnce);
-    });
-    it("should not call sendData if not relayers tests pass", async () => {
-        // Setup Relayers and spies
-        const wontRunRelayer = createFakeRelay("publicStatic");
-        wontRunRelayer.test = () => false;
-        wontRunRelayer.name = "wontRunRelayer";
-        const wontRunRelayer1 = createFakeRelay("publicStatic");
-        wontRunRelayer1.test = () => false;
-        wontRunRelayer1.name = "wontRunRelayer";
+            // Validate matching relayers were called, unmatching were not, and that sendData got called
+            assert(shouldRunRelayerTest.calledOnce);
+            assert(shouldRunRelayerProcessor.calledOnce);
+            assert(shouldNotRunRelayerProcessor.notCalled);
+            assert(sD.calledOnce);
+        });
+        it("should not call sendData if not relayers tests pass", async () => {
+            // Setup Relayers and spies
+            const wontRunRelayer = createFakeRelay("publicStatic");
+            wontRunRelayer.test = () => false;
+            wontRunRelayer.name = "wontRunRelayer";
+            const wontRunRelayer1 = createFakeRelay("publicStatic");
+            wontRunRelayer1.test = () => false;
+            wontRunRelayer1.name = "wontRunRelayer";
 
-        const relayers = [
-            wontRunRelayer,
-            wontRunRelayer1,
-        ];
+            const relayers = [
+                wontRunRelayer,
+                wontRunRelayer1,
+            ];
 
-        // Add Relayers to config
-        (global as any).__runningAutomationClient = {
-            configuration: {
-                sdm: {
-                    eventRelayers: relayers,
+            // Add Relayers to config
+            (global as any).__runningAutomationClient = {
+                configuration: {
+                    sdm: {
+                        eventRelayers: relayers,
+                    },
                 },
-            },
-        };
+            };
 
-        // Stub out send data
-        const sD = sandbox.stub(sendData, "sendData");
-        sD.returns(Promise.resolve(undefined));
+            // Stub out send data
+            const sD = sandbox.stub(sendData, "sendData");
+            sD.returns(Promise.resolve(undefined));
 
-        // Setup fake context
-        const context = fakeContext();
+            // Setup fake context
+            const context = fakeContext();
 
-        // Setup stub for sendData
-        await new EventRelayHandler().handle(testEventData, context);
-        sD.restore();
+            // Setup stub for sendData
+            await EventRelayHandler.listener(testEventData, context, {});
+            sD.restore();
 
-        // Validate sendData was not called since no relayers match
-        assert(sD.notCalled);
-    });
-    it("should call data processor if present on relayer", async () => {
-        // Setup Relayers and spies
-        const relayer1 = createFakeRelay("publicStatic");
-        const processor = sandbox.spy(relayer1, "processor");
+            // Validate sendData was not called since no relayers match
+            assert(sD.notCalled);
+        });
+        it("should call data processor if present on relayer", async () => {
+            // Setup Relayers and spies
+            const relayer1 = createFakeRelay("publicStatic");
+            const processor = sandbox.spy(relayer1, "processor");
 
-        const relayers = [
-            relayer1,
-        ];
+            const relayers = [
+                relayer1,
+            ];
 
-        // Add Relayers to config
-        (global as any).__runningAutomationClient = {
-            configuration: {
-                sdm: {
-                    eventRelayers: relayers,
+            // Add Relayers to config
+            (global as any).__runningAutomationClient = {
+                configuration: {
+                    sdm: {
+                        eventRelayers: relayers,
+                    },
                 },
-            },
-        };
+            };
 
-        // Stub out send data
-        const sD = sandbox.stub(sendData, "sendData");
-        sD.returns(Promise.resolve(undefined));
+            // Stub out send data
+            const sD = sandbox.stub(sendData, "sendData");
+            sD.returns(Promise.resolve(undefined));
 
-        // Setup fake context
-        const context = fakeContext();
+            // Setup fake context
+            const context = fakeContext();
 
-        // Setup stub for sendData
-        await new EventRelayHandler().handle(testEventData, context);
-        sD.restore();
+            // Setup stub for sendData
+            await EventRelayHandler.listener(testEventData, context, {});
+            sD.restore();
 
-        // Validate sendData was not called since no relayers match
-        assert(processor.calledOnce);
-        const arg = sD.args[0];
-        assert(Object.keys(arg[1].body).includes("x-fakerelay-type"));
-        assert.strictEqual(arg[1].body["x-fakerelay-type"], arg[1].headers["x-event-key"]);
+            // Validate sendData was not called since no relayers match
+            assert(processor.calledOnce);
+            const arg = sD.args[0];
+            assert(Object.keys(arg[1].body).includes("x-fakerelay-type"));
+            assert.strictEqual(arg[1].body["x-fakerelay-type"], arg[1].headers["x-event-key"]);
+        });
     });
 });
