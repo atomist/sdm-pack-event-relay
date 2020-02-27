@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ import {
     createHmacSignature,
     redactObjectProperty,
     sdmPostWebhook,
+    validateHmacSignature,
 } from "../../lib/support/util";
 import * as fakeHttpClients from "../testUtils/fakeHttpFactor.test";
 import { fakeHeaders } from "../testUtils/fakeRelayer.test";
+import { testPayload } from "../testUtils/payload.test";
 describe("util", () => {
     let sandbox: sinon.SinonSandbox;
     before(() => {
@@ -54,6 +56,29 @@ describe("util", () => {
             const result = addAtomistSignatureHeader("testKey", {t: "test"}, {}, "sha256");
             assert(result.hasOwnProperty("x-hub-signature"));
             assert.strictEqual(result["x-hub-signature"], "sha256=fd3e3389577b6fda00fb56d48ce6465b75936ec61da321b20074374260177125");
+        });
+    });
+    describe("validateHmacSignature", () => {
+        it("should validate a correct payload", () => {
+            const result = validateHmacSignature(
+                "IAMAFAKEKEY",
+                "sha1=9e7bbd6ef59f23271d3c4fdcbd610b1c8502fee8",
+                JSON.stringify(JSON.parse(testPayload)));
+            assert(result);
+        });
+        it("should not validate a payload with an incorrect signature", () => {
+            const result = validateHmacSignature(
+                "IAMAFAKEKEY",
+                "sha1=invalid",
+                JSON.stringify(JSON.parse(testPayload)));
+            assert(!result);
+        });
+        it("should not validate a payload with an incorrect payload", () => {
+            const result = validateHmacSignature(
+                "IAMAFAKEKEY",
+                "sha1=9e7bbd6ef59f23271d3c4fdcbd610b1c8502fee8",
+                JSON.stringify("fake"));
+            assert(!result);
         });
     });
     describe("sdmPostWebhook", () => {

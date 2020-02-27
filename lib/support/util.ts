@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import {
     HttpMethod,
     logger,
 } from "@atomist/automation-client";
+import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import * as crypto from "crypto";
 import * as _ from "lodash";
@@ -39,6 +40,13 @@ export function addAtomistSignatureHeader(
 ): HttpClientOptions["headers"] {
     headers["x-hub-signature"] = `${algorithm}=${createHmacSignature(key, payload, algorithm)}`;
     return headers;
+}
+
+export function validateHmacSignature(key: string, signature: string, payload: string, algorithm: string = "sha1"): boolean {
+    const hmac = crypto.createHmac(algorithm, key);
+    const digest = Buffer.from(`${algorithm}=` + hmac.update(payload).digest("hex"), "utf8");
+    const checksum = Buffer.from(signature, "utf8");
+    return !(checksum.length !== digest.length || !crypto.timingSafeEqual(digest, checksum));
 }
 
 export function purgeCommonHeaders(
@@ -109,3 +117,70 @@ export function redactObjectProperty(o: any, property: string, newValue: string 
     }
     return o;
 }
+
+/**
+ * This interface is used to describe the validator that is applied to incoming messages.  A validator can be used to validate message
+ * payloads (digest) or used to implement authentication/authorization for incoming messages.
+ */
+export interface Validator {
+    name: string;
+    handler: (headers: Record<string, string | string[] | undefined>,
+              payload: any,
+              config: Configuration & SoftwareDeliveryMachineConfiguration) => Promise<{success: boolean, message?: string}>;
+}
+
+/**
+ * Default validator, uses API key for authorization.  Must send API key as a authorization bearer token header.
+ */
+export const apiKeyValidator: Validator = {
+    name: "apiKeyValidator",
+    handler: async (h, p, config) => {
+        if (h.authorization) {
+            if (typeof h.authorization === "string" && h.authorization.split(" ")[1] === config.apiKey) {
+                return {success: true};
+            } else {
+                return {success: false, message: "Must supply valid API key"};
+            }
+        } else {
+            return {
+                success: false,
+                message: "Unauthorized.  Must supply token",
+            };
+        }
+    },
+};
+
+/**
+ * This validator disables all validation
+ */
+export const nullValidator: Validator = {
+    name: "nullValidator",
+    handler: async () => {
+        return {success: true};
+    },
+};
+
+/**
+ * This validator is used to verify digest message contents sent via Github webhooks.
+ */
+export const githubHmacValidator: Validator = {
+    name: "githubHmacValidator",
+    handler: async (h, p, config) => {
+        const body = JSON.stringify(p);
+        const key = _.get(config, "sdm.eventRelay.secret");
+        if (!key) {
+            logger.error("Missing secret!  You must supply this in your configuration at sdm.eventRelay.secret!");
+            return {success: false, message: "Cannot process message."};
+        }
+        const signature = h["x-hub-signature"] as string;
+        if (!signature) {
+            logger.error(`Error processing message, invalid.  Expecting a signature header!`);
+            logger.debug(`Message missing signature header: ${body}`);
+            return {success: false, message: "Cannot process message."};
+        }
+        if (validateHmacSignature(key, signature, body)) {
+            return {success: true};
+        }
+        return {success: false, message: "Could not validate message!"};
+    },
+};

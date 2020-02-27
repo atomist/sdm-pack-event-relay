@@ -43,6 +43,23 @@ sdm.addExtensionPacks(
 See the `EventRelayer` interface for details on creating EventRelayer(s).  For details on the extension pack
 configuration, see the `eventRelaySupport` type documentation.
 
+## Authentication and/or Validation
+By default the event relay pack uses the Atomist API key configured to authorize incoming relay requests.  This key must
+be supplied in an authorization header (as a bearer token).  However, this is not appropriate for all use cases.  The
+authentication/validation used by the relay pack is pluggable using the `validation` option on `eventRelaySupport`.
+
+There are the 3 built-in validators, or you can build your own (see the `Validator` interface).
+
+`nullValidator`: By using this validator you disable auth/verification completely.  All messages are accepted and then
+evaluated to see if any configured relayer knows how to send it.
+
+`apiKeyValidator`: This is the default, and functions as documented above.
+
+`githubHmacValidator`: This validator uses a signature header sent by Github when you supply a secret for your pull
+requests (x-hub-signature). The validator loads the shared key from your SDM configuration located at
+`sdm.eventRelayer.secret` and uses this to validate the signature in the incoming message.  Should the signatures match,
+the message is accepted and the normal event relay process continues.
+
 [atomist-doc]: https://docs.atomist.com/ (Atomist Documentation)
 
 ## Getting started
