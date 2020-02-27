@@ -18,17 +18,21 @@ import {
     Destination,
     HandlerContext,
     HttpClientOptions,
-    logger,
 } from "@atomist/automation-client";
 import {
     ExtensionPack,
     metadata,
 } from "@atomist/sdm";
-import { EventRelayData } from "./event/eventRelay";
+import {
+    EventRelayData,
+    EventRelayHandler,
+    EventRelayHandlerRemovingAutomationMetadataProcessor,
+} from "./event/eventRelay";
 import { eventRelayPostProcessor } from "./support/customizer";
 
 type EventTargetPublic<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<string | string[]>;
 type EventTargetPrivate<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<Destination | Destination[]>;
+
 /**
  * Represents the destination for an event relayer
  *
@@ -89,6 +93,8 @@ export const eventRelaySupport = (
         requiredConfigurationValues: [],
         configure: sdm => {
             sdm.configuration.sdm.eventRelayers = options.eventRelayers;
+            sdm.configuration.metadataProcessor = new EventRelayHandlerRemovingAutomationMetadataProcessor();
+            sdm.addEvent(EventRelayHandler);
             eventRelayPostProcessor(sdm.configuration);
         },
     };

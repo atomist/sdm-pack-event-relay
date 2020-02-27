@@ -34,7 +34,6 @@ import { EventRelayer } from "../eventRelay";
 export function eventRelayPostProcessor(config: Configuration & SoftwareDeliveryMachineConfiguration): void {
     config.http.customizers.push(
         c => {
-            let registered = false;
             logger.debug(`EventRelayers registered: ` +
                 config.sdm.eventRelayers.map((r: EventRelayer) => r.name).join(", "),
             );
@@ -62,17 +61,12 @@ export function eventRelayPostProcessor(config: Configuration & SoftwareDelivery
                         headers: req.headers,
                     },
                     extensions: {
-                        operationName: "EventRelayHandler",
+                        operationName: EventRelayHandler.name,
                         team_id: config.workspaceIds[0],
                         correlation_id: guid(),
                     },
                     secrets: [],
                 };
-
-                if (!registered) {
-                    automationClientInstance().withEventHandler(() => new EventRelayHandler());
-                    registered = true;
-                }
 
                 automationClientInstance().webSocketHandler.processEvent(data);
                 return res.send({success: true, message: "Payload submitted to be relayed"});
