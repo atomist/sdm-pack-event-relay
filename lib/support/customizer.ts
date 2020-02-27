@@ -31,7 +31,7 @@ import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm";
 import { EventRelayHandler } from "../event/eventRelay";
 import { EventRelayer } from "../eventRelay";
 
-export function eventRelayPostProcessor(config: Configuration & SoftwareDeliveryMachineConfiguration): void {
+export function eventRelayPostProcessor(config: Configuration & SoftwareDeliveryMachineConfiguration, authRequired: boolean): void {
     config.http.customizers.push(
         c => {
             logger.debug(`EventRelayers registered: ` +
@@ -39,22 +39,23 @@ export function eventRelayPostProcessor(config: Configuration & SoftwareDelivery
             );
 
             c.post("/relay", async (req, res) => {
-                if (req.get("authorization")) {
-                    if (!(req.get("authorization").split(" ")[1] === config.apiKey)) {
+                if (authRequired) {
+                    if (req.get("authorization")) {
+                        if (!(req.get("authorization").split(" ")[1] === config.apiKey)) {
+                            res.status(401);
+                            return res.send({
+                                success: false,
+                                message: "Unrecognized API Key",
+                            });
+                        }
+                    } else {
                         res.status(401);
                         return res.send({
                             success: false,
-                            message: "Unrecognized API Key",
+                            message: "Unauthorized.  Must supply token",
                         });
                     }
-                } else {
-                    res.status(401);
-                    return res.send({
-                        success: false,
-                        message: "Unauthorized.  Must supply token",
-                    });
                 }
-
                 const data: EventIncoming = {
                     data: {
                         body: req.body,
