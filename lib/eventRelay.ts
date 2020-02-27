@@ -29,7 +29,10 @@ import {
     EventRelayHandlerRemovingAutomationMetadataProcessor,
 } from "./event/eventRelay";
 import { eventRelayPostProcessor } from "./support/customizer";
-import {apiKeyValidator, Validator} from "./support/util";
+import {
+    apiKeyValidator,
+    Validator,
+} from "./support/util";
 
 type EventTargetPublic<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<string | string[]>;
 type EventTargetPrivate<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<Destination | Destination[]>;

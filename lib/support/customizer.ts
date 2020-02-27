@@ -20,11 +20,17 @@
  *
  * @param {Configuration} config sdm configuration
  */
-import {automationClientInstance, Configuration, EventIncoming, guid, logger} from "@atomist/automation-client";
-import {SoftwareDeliveryMachineConfiguration} from "@atomist/sdm";
-import {EventRelayHandler} from "../event/eventRelay";
-import {EventRelayer} from "../eventRelay";
-import {Validator} from "./util";
+import {
+    automationClientInstance,
+    Configuration,
+    EventIncoming,
+    guid,
+    logger,
+} from "@atomist/automation-client";
+import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm";
+import { EventRelayHandler } from "../event/eventRelay";
+import { EventRelayer } from "../eventRelay";
+import { Validator } from "./util";
 
 export function eventRelayPostProcessor(config: Configuration & SoftwareDeliveryMachineConfiguration, validation: Validator): void {
     config.http.customizers.push(

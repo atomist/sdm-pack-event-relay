@@ -21,7 +21,7 @@ import {
     HttpMethod,
     logger,
 } from "@atomist/automation-client";
-import {SoftwareDeliveryMachineConfiguration} from "@atomist/sdm";
+import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import * as crypto from "crypto";
 import * as _ from "lodash";

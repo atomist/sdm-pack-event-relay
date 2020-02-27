@@ -21,11 +21,12 @@ import {
     addAtomistSignatureHeader,
     createHmacSignature,
     redactObjectProperty,
-    sdmPostWebhook, validateHmacSignature,
+    sdmPostWebhook,
+    validateHmacSignature,
 } from "../../lib/support/util";
 import * as fakeHttpClients from "../testUtils/fakeHttpFactor.test";
 import { fakeHeaders } from "../testUtils/fakeRelayer.test";
-import {testPayload} from "../testUtils/payload.test";
+import { testPayload } from "../testUtils/payload.test";
 describe("util", () => {
     let sandbox: sinon.SinonSandbox;
     before(() => {
