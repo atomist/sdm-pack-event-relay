@@ -40,8 +40,10 @@ export function eventRelayPostProcessor(config: Configuration & SoftwareDelivery
             );
             logger.debug(`EventRelayer: Using validator ${validation.name} on incoming messages`);
 
-            c.post("/relay", async (req, res) => {
+            c.post(["/relay", "/relay/:team"], async (req, res) => {
                 const result = await validation.handler(req.headers, req.body, config);
+                const team = req.params.team ? req.params.team : config.workspaceIds[0];
+
                 if (!result.success) {
                     res.status(401);
                     return res.send(result);
@@ -53,7 +55,7 @@ export function eventRelayPostProcessor(config: Configuration & SoftwareDelivery
                     },
                     extensions: {
                         operationName: EventRelayHandler.name,
-                        team_id: config.workspaceIds[0],
+                        team_id: team.toUpperCase(),
                         correlation_id: guid(),
                     },
                     secrets: [],

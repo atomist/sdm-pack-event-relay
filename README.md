@@ -60,6 +60,17 @@ requests (x-hub-signature). The validator loads the shared key from your SDM con
 `sdm.eventRelayer.secret` and uses this to validate the signature in the incoming message.  Should the signatures match,
 the message is accepted and the normal event relay process continues.
 
+## Multiple Workspaces
+When using a private event type (which sends messages over the web socket), you need to configure your webhooks to
+include the workspace they should post to.  If you do not supply the workspace in the URL (see below), the first
+workspace from your configuration will automatically be selected and used as the destination workspace for this event.
+
+To use the first configured (or only) workspace, simply send your webhook payloads to `<host>:2866/relay`.  To send to
+a specific workspace send your webhook payloads to `<host>:2866/relay/:workspace`.  
+
+
+> Note: This has no impact on public event types because you provide the full destination URL in the relayer defined
+
 [atomist-doc]: https://docs.atomist.com/ (Atomist Documentation)
 
 ## Getting started
