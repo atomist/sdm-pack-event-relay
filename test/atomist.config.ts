@@ -17,9 +17,7 @@
 import {
     addressEvent,
     Configuration,
-    configurationValue,
     guid,
-    HttpClientOptions,
 } from "@atomist/automation-client";
 import {
     SoftwareDeliveryMachine,
@@ -29,15 +27,14 @@ import {
     configureSdm,
     createSoftwareDeliveryMachine,
 } from "@atomist/sdm-core";
-import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     EventRelayer,
     eventRelaySupport,
 } from "../lib/eventRelay";
-import {
-    addAtomistSignatureHeader,
-    purgeCommonHeaders,
-} from "../lib/support/util";
+// import {
+//     addAtomistSignatureHeader,
+//     purgeCommonHeaders,
+// } from "../lib/support/util";
 
 export function machineMaker(config: SoftwareDeliveryMachineConfiguration): SoftwareDeliveryMachine {
 

@@ -20,41 +20,26 @@
  *
  * @param {Configuration} config sdm configuration
  */
-import {
-    automationClientInstance,
-    Configuration,
-    EventIncoming,
-    guid,
-    logger,
-} from "@atomist/automation-client";
-import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm";
-import { EventRelayHandler } from "../event/eventRelay";
-import { EventRelayer } from "../eventRelay";
+import {automationClientInstance, Configuration, EventIncoming, guid, logger} from "@atomist/automation-client";
+import {SoftwareDeliveryMachineConfiguration} from "@atomist/sdm";
+import {EventRelayHandler} from "../event/eventRelay";
+import {EventRelayer} from "../eventRelay";
+import {Validator} from "./util";
 
-export function eventRelayPostProcessor(config: Configuration & SoftwareDeliveryMachineConfiguration): void {
+export function eventRelayPostProcessor(config: Configuration & SoftwareDeliveryMachineConfiguration, validation: Validator): void {
     config.http.customizers.push(
         c => {
             logger.debug(`EventRelayers registered: ` +
                 config.sdm.eventRelayers.map((r: EventRelayer) => r.name).join(", "),
             );
+            logger.debug(`EventRelayer: Using validator ${validation.name} on incoming messages`);
 
             c.post("/relay", async (req, res) => {
-                if (req.get("authorization")) {
-                    if (!(req.get("authorization").split(" ")[1] === config.apiKey)) {
-                        res.status(401);
-                        return res.send({
-                            success: false,
-                            message: "Unrecognized API Key",
-                        });
-                    }
-                } else {
+                const result = await validation.handler(req.headers, req.body, config);
+                if (!result.success) {
                     res.status(401);
-                    return res.send({
-                        success: false,
-                        message: "Unauthorized.  Must supply token",
-                    });
+                    return res.send(result);
                 }
-
                 const data: EventIncoming = {
                     data: {
                         body: req.body,

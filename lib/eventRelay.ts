@@ -29,6 +29,7 @@ import {
     EventRelayHandlerRemovingAutomationMetadataProcessor,
 } from "./event/eventRelay";
 import { eventRelayPostProcessor } from "./support/customizer";
+import {apiKeyValidator, Validator} from "./support/util";
 
 type EventTargetPublic<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<string | string[]>;
 type EventTargetPrivate<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<Destination | Destination[]>;
@@ -83,6 +84,11 @@ export interface EventRelayer<DATA = any> {
 
 interface EventRelaySupportOptions {
     eventRelayers: Array<EventRelayer<any>>;
+
+    /**
+     * Which validator should be used to authenticate/validate incoming messages.  Defaults to apiKey if not set.
+     */
+    validation?: Validator;
 }
 
 export const eventRelaySupport = (
@@ -95,7 +101,7 @@ export const eventRelaySupport = (
             sdm.configuration.sdm.eventRelayers = options.eventRelayers;
             sdm.configuration.metadataProcessor = new EventRelayHandlerRemovingAutomationMetadataProcessor();
             sdm.addEvent(EventRelayHandler);
-            eventRelayPostProcessor(sdm.configuration);
+            eventRelayPostProcessor(sdm.configuration, options.validation === undefined ? apiKeyValidator : options.validation);
         },
     };
 };
