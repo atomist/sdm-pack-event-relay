@@ -57,7 +57,7 @@ evaluated to see if any configured relayer knows how to send it.
 
 `githubHmacValidator`: This validator uses a signature header sent by Github when you supply a secret for your pull
 requests (x-hub-signature). The validator loads the shared key from your SDM configuration located at
-`sdm.eventRelayer.secret` and uses this to validate the signature in the incoming message.  Should the signatures match,
+`sdm.eventRelay.secret` and uses this to validate the signature in the incoming message.  Should the signatures match,
 the message is accepted and the normal event relay process continues.
 
 ## Multiple Workspaces
