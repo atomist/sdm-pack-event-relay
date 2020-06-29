@@ -14,23 +14,14 @@
  * limitations under the License.
  */
 
+import { addressEvent, Configuration, guid } from "@atomist/automation-client";
 import {
-    addressEvent,
-    Configuration,
-    guid,
-} from "@atomist/automation-client";
-import {
-    SoftwareDeliveryMachine,
-    SoftwareDeliveryMachineConfiguration,
+  SoftwareDeliveryMachine,
+  SoftwareDeliveryMachineConfiguration,
 } from "@atomist/sdm";
-import {
-    configureSdm,
-    createSoftwareDeliveryMachine,
-} from "@atomist/sdm-core";
-import {
-    EventRelayer,
-    eventRelaySupport,
-} from "../lib/eventRelay";
+import { configureSdm, createSoftwareDeliveryMachine } from "@atomist/sdm-core";
+import { EventRelayer, eventRelaySupport } from "../lib/eventRelay";
+import { apiKeyValidator, nullValidator } from "../lib/support/util";
 // import {
 //     addAtomistSignatureHeader,
 //     purgeCommonHeaders,
@@ -116,7 +107,11 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
                issue.body.user.displayName = guid();
                return issue;
             },
+            validator: nullValidator,
     };
+
+    const testJiraRelay1 = {...testJiraRelay};
+    testJiraRelay1.name = "testJiraRelay1";
 
     /**
      * Register Ext pack
@@ -125,8 +120,10 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
         eventRelaySupport({
             eventRelayers: [
                 testJiraRelay,
+                testJiraRelay1,
                 bitbucketRelay,
             ],
+            validation: apiKeyValidator,
         }),
     );
 

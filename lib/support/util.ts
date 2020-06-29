@@ -21,10 +21,10 @@ import {
     HttpMethod,
     logger,
 } from "@atomist/automation-client";
-import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import * as crypto from "crypto";
 import * as _ from "lodash";
+import {Validator} from "../eventRelay";
 
 export function createHmacSignature(key: string, payload: any, algorithm: string = "sha1"): string {
     const digest = crypto.createHmac(algorithm, key);
@@ -116,17 +116,6 @@ export function redactObjectProperty(o: any, property: string, newValue: string 
         }
     }
     return o;
-}
-
-/**
- * This interface is used to describe the validator that is applied to incoming messages.  A validator can be used to validate message
- * payloads (digest) or used to implement authentication/authorization for incoming messages.
- */
-export interface Validator {
-    name: string;
-    handler: (headers: Record<string, string | string[] | undefined>,
-              payload: any,
-              config: Configuration & SoftwareDeliveryMachineConfiguration) => Promise<{success: boolean, message?: string}>;
 }
 
 /**

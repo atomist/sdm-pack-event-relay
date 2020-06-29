@@ -63,37 +63,43 @@ export const EventRelayHandler: EventHandlerRegistration<EventRelayData> = {
             }
         }
 
+        let relayer: EventRelayer;
         if (relayersForThisEvent.length === 0) {
             logger.debug(`No EventRelayers found for this event`);
             return Success;
+        } else {
+          /**
+           * Note that there is already a test done earlier in the event flow logging a warning if there is multiple
+           * realyers that match this event type so it is not repeated here.  There should be only one, and if there are
+           * multiple only the first is used.
+           */
+          relayer = relayersForThisEvent[0];
         }
 
         /**
          * For each matching relayer, run processor if provided followed by send
          */
-        for (const relayer of relayersForThisEvent) {
-            try {
-                event.data = relayer.processor ?
-                    await relayer.processor(event.data) : event.data;
+        try {
+            event.data = relayer.processor ?
+                await relayer.processor(event.data) : event.data;
 
-                if (relayer.processor) {
-                    logger.debug(
-                        `Successfully processed data with relayer ${relayer.name}'s processor`);
-                }
-            } catch (e) {
-                const message = `Failed to processor data with relayer ${relayer.name}.  Error => ${e}`;
-                logger.error(message);
-                return { code: 1, message };
+            if (relayer.processor) {
+                logger.debug(
+                    `Successfully processed data with relayer ${relayer.name}'s processor`);
             }
+        } catch (e) {
+            const message = `Failed to processor data with relayer ${relayer.name}.  Error => ${e}`;
+            logger.error(message);
+            return { code: 1, message };
+        }
 
-            try {
-                await sendData(relayer, event.data, ctx);
-                logger.debug(`Successfully sent data with relayer ${relayer.name}`);
-            } catch (e) {
-                const message = `Failed to send data with relayer ${relayer.name}.  Error => ${e}`;
-                logger.error(message);
-                return { code: 1, message };
-            }
+        try {
+            await sendData(relayer, event.data, ctx);
+            logger.debug(`Successfully sent data with relayer ${relayer.name}`);
+        } catch (e) {
+            const message = `Failed to send data with relayer ${relayer.name}.  Error => ${e}`;
+            logger.error(message);
+            return { code: 1, message };
         }
         return Success;
     },

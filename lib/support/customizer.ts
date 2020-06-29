@@ -29,41 +29,84 @@ import {
 } from "@atomist/automation-client";
 import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm";
 import { EventRelayHandler } from "../event/eventRelay";
-import { EventRelayer } from "../eventRelay";
-import { Validator } from "./util";
+import { EventRelayer, Validator } from "../eventRelay";
 
-export function eventRelayPostProcessor(config: Configuration & SoftwareDeliveryMachineConfiguration, validation: Validator): void {
-    config.http.customizers.push(
-        c => {
-            logger.debug(`EventRelayers registered: ` +
-                config.sdm.eventRelayers.map((r: EventRelayer) => r.name).join(", "),
-            );
-            logger.debug(`EventRelayer: Using validator ${validation.name} on incoming messages`);
-
-            c.post(["/relay", "/relay/:team"], async (req, res) => {
-                const result = await validation.handler(req.headers, req.body, config);
-                const team = req.params.team ? req.params.team : config.workspaceIds[0];
-
-                if (!result.success) {
-                    res.status(401);
-                    return res.send(result);
-                }
-                const data: EventIncoming = {
-                    data: {
-                        body: req.body,
-                        headers: req.headers,
-                    },
-                    extensions: {
-                        operationName: EventRelayHandler.name,
-                        team_id: team.toUpperCase(),
-                        correlation_id: guid(),
-                    },
-                    secrets: [],
-                };
-
-                automationClientInstance().webSocketHandler.processEvent(data);
-                return res.send({success: true, message: "Payload submitted to be relayed"});
-            });
-        },
+export function eventRelayPostProcessor(
+  config: Configuration & SoftwareDeliveryMachineConfiguration,
+  validation: Validator,
+): void {
+  config.http.customizers.push(c => {
+    const relayers = config.sdm.eventRelayers;
+    logger.debug(
+      `EventRelayers registered: ` +
+        relayers.map((r: EventRelayer) => r.name).join(", "),
     );
+
+    c.post(["/relay", "/relay/:team"], async (req, res) => {
+      /**
+       * Format data for processing by the SDM event loop
+       */
+      const team = req.params.team ? req.params.team : config.workspaceIds[0];
+      const data: EventIncoming = {
+        data: {
+          body: req.body,
+          headers: req.headers,
+        },
+        extensions: {
+          operationName: EventRelayHandler.name,
+          team_id: team.toUpperCase(),
+          correlation_id: guid(),
+        },
+        secrets: [],
+      };
+
+      /**
+       * For each relayer, run provided test to see if it's a match; store the ones that are
+       */
+      const relayersForThisEvent: EventRelayer[] = [];
+      try {
+        for (const r of relayers) {
+          if (r.test(data.data)) {
+            relayersForThisEvent.push(r);
+          }
+        }
+      } catch (e) {
+        logger.error(`Failed to determine matching relayers for event, error recieved: ${e}`);
+        res.status(500);
+        return res.send({success: false, message: "internal server error"});
+      }
+
+      /**
+       * There should only be relayer for each data type.  If there is more then one select
+       */
+      let validator: Validator;
+      if (relayersForThisEvent.length === 0) {
+        res.status(500);
+        return res.send({success: false, message: "No relayers found for this data payload."});
+      } else if (relayersForThisEvent.length > 1) {
+        logger.warn(`More then one event relayer found for incoming payload! ` +
+                    `Using first relayer ${relayersForThisEvent[0].name}. ` +
+                    `Others found ${relayersForThisEvent.slice(1).map(r => r.name).join(",")}.`);
+        validator = relayersForThisEvent[0].validator || validation;
+      } else {
+        validator = relayersForThisEvent[0].validator || validation;
+      }
+
+      logger.debug(`EventRelayer: Using relayer ${relayersForThisEvent[0].name}`);
+      logger.debug( `EventRelayer: Using validator ${validator.name} on incoming message`);
+
+      const result = await validator.handler(req.headers, req.body, config);
+
+      if (!result.success) {
+        res.status(401);
+        return res.send(result);
+      }
+
+      automationClientInstance().webSocketHandler.processEvent(data);
+      return res.send({
+        success: true,
+        message: "Payload submitted to be relayed",
+      });
+    });
+  });
 }
