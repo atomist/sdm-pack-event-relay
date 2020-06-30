@@ -123,7 +123,7 @@ export function redactObjectProperty(o: any, property: string, newValue: string 
  */
 export const apiKeyValidator: Validator = {
     name: "apiKeyValidator",
-    handler: async (h, p, config) => {
+    handler: async (h, q, p, config) => {
         if (h.authorization) {
             if (typeof h.authorization === "string" && h.authorization.split(" ")[1] === config.apiKey) {
                 return {success: true};
@@ -150,11 +150,32 @@ export const nullValidator: Validator = {
 };
 
 /**
+ * This function creates a validator that allows you to validate incoming messages via URL query string
+ */
+export function createQueryStringValidator(name: string, validations: Array<{param: string, value: string}>): Validator {
+  return {
+    name,
+    handler: async (h, q) => {
+      let response: {success: boolean, message?: string};
+      await Promise.all(validations.map(v => {
+        if (_.get(q, v.param) !== v.value) {
+          response = {success: false, message: "Could not validate message!"};
+          logger.debug(`${name} vaildator: failed to validate query param [${v.param}] for incoming message`);
+        } else {
+          response = {success: true};
+        }
+      }));
+      return response;
+    },
+  };
+}
+
+/**
  * This validator is used to verify digest message contents sent via Github webhooks.
  */
 export const githubHmacValidator: Validator = {
     name: "githubHmacValidator",
-    handler: async (h, p, config) => {
+    handler: async (h, q, p, config) => {
         const body = JSON.stringify(p);
         const key = _.get(config, "sdm.eventRelay.secret");
         if (!key) {

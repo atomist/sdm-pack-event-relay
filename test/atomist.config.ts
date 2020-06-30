@@ -21,7 +21,7 @@ import {
 } from "@atomist/sdm";
 import { configureSdm, createSoftwareDeliveryMachine } from "@atomist/sdm-core";
 import { EventRelayer, eventRelaySupport } from "../lib/eventRelay";
-import { apiKeyValidator, nullValidator } from "../lib/support/util";
+import { apiKeyValidator, createQueryStringValidator } from "../lib/support/util";
 // import {
 //     addAtomistSignatureHeader,
 //     purgeCommonHeaders,
@@ -56,6 +56,7 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
             //     return configurationValue<string>("sdm.git.webhookdest");
             // },
         },
+        validator: createQueryStringValidator("foo", [{param: "bar", value: "woot"}]),
     };
 
     /**
@@ -107,7 +108,7 @@ export function machineMaker(config: SoftwareDeliveryMachineConfiguration): Soft
                issue.body.user.displayName = guid();
                return issue;
             },
-            validator: nullValidator,
+            // validator: nullValidator,
     };
 
     const testJiraRelay1 = {...testJiraRelay};

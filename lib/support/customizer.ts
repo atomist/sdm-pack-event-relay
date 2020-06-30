@@ -95,8 +95,7 @@ export function eventRelayPostProcessor(
       logger.debug(`EventRelayer: Using relayer ${relayersForThisEvent[0].name}`);
       logger.debug( `EventRelayer: Using validator ${validator.name} on incoming message`);
 
-      const result = await validator.handler(req.headers, req.body, config);
-
+      const result = await validator.handler(req.headers, req.query, req.body, config);
       if (!result.success) {
         res.status(401);
         return res.send(result);

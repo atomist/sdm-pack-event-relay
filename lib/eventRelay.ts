@@ -36,15 +36,34 @@ import { apiKeyValidator } from "./support/util";
 type EventTargetPublic<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<string | string[]>;
 type EventTargetPrivate<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<Destination | Destination[]>;
 
+// This interface is copy of ParsedQs in the qs package
+interface QueryString { [key: string]: undefined | string | string[] | QueryString | QueryString[]; }
+
 /**
- * This interface is used to describe the validator that is applied to incoming messages.  A validator can be used to validate message
- * payloads (digest) or used to implement authentication/authorization for incoming messages.
+ * This interface is used to describe the validator that is applied to incoming messages.  A validator can be used to
+ * validate message payloads (digest) or used to implement authentication/authorization for incoming messages.
+ *
+ * Validation is not always just secret or user/pass combination.  You can use any of the data supplied to determine if
+ * a message should be accepted or not.   "Accepted" means the return object has a `success` property set to true.   If
+ * an incoming payload is not accepted it should have a `success` property value of false.  Optionally you can include a
+ * message to return as part of the response.
  */
 export interface Validator {
-    name: string;
-    handler: (headers: Record<string, string | string[] | undefined>,
-              payload: any,
-              config: Configuration & SoftwareDeliveryMachineConfiguration) => Promise<{success: boolean, message?: string}>;
+  name: string;
+  /**
+   * Handler used to actually validate if a message should be accepted or rejected
+   *
+   * @param headers HTTP Headers sent for this request
+   * @param queryString HTTP Query string (if set)
+   * @param payload HTTP POST body
+   * @param config Configuration & SoftwareDeliveryMachineConfiguration
+   */
+  handler: (
+    headers: Record<string, string | string[] | undefined>,
+    queryString: QueryString,
+    payload: any,
+    config: Configuration & SoftwareDeliveryMachineConfiguration,
+  ) => Promise<{ success: boolean; message?: string }>;
 }
 
 /**
