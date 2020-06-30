@@ -157,14 +157,14 @@ export function createQueryStringValidator(name: string, validations: Array<{par
     name,
     handler: async (h, q) => {
       let response: {success: boolean, message?: string};
-      await Promise.all(validations.map(v => {
+      validations.forEach(v => {
         if (_.get(q, v.param) !== v.value) {
           response = {success: false, message: "Could not validate message!"};
           logger.debug(`${name} vaildator: failed to validate query param [${v.param}] for incoming message`);
         } else {
           response = {success: true};
         }
-      }));
+      });
       return response;
     },
   };
