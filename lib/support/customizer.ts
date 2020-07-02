@@ -92,11 +92,11 @@ export function eventRelayPostProcessor(
         validator = relayersForThisEvent[0].validator || validation;
       }
 
-      logger.debug(`EventRelayer: Using relayer ${relayersForThisEvent[0].name}`);
-      logger.debug( `EventRelayer: Using validator ${validator.name} on incoming message`);
-
+      logger.debug( `EventRelayer[${relayersForThisEvent[0].name}]: Using validator [${validator.name}] on incoming message`);
       const result = await validator.handler(req.headers, req.query, req.body, config);
       if (!result.success) {
+        logger.warn(`EventRelayer[${relayersForThisEvent[0].name}]: ` +
+                    `Failed to validate message from source [${req.ip}]. (validator: ${validator.name})`);
         res.status(401);
         return res.send(result);
       }
