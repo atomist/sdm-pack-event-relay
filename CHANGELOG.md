@@ -10,3 +10,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 -   Empty SDM pack structure.
+-   Authentication Updates. [#17](https://github.com/atomist/sdm-pack-event-relay/issues/17)
