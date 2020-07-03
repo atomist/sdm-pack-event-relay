@@ -21,10 +21,10 @@ import {
     HttpMethod,
     logger,
 } from "@atomist/automation-client";
-import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import * as crypto from "crypto";
 import * as _ from "lodash";
+import {Validator} from "../eventRelay";
 
 export function createHmacSignature(key: string, payload: any, algorithm: string = "sha1"): string {
     const digest = crypto.createHmac(algorithm, key);
@@ -119,22 +119,11 @@ export function redactObjectProperty(o: any, property: string, newValue: string 
 }
 
 /**
- * This interface is used to describe the validator that is applied to incoming messages.  A validator can be used to validate message
- * payloads (digest) or used to implement authentication/authorization for incoming messages.
- */
-export interface Validator {
-    name: string;
-    handler: (headers: Record<string, string | string[] | undefined>,
-              payload: any,
-              config: Configuration & SoftwareDeliveryMachineConfiguration) => Promise<{success: boolean, message?: string}>;
-}
-
-/**
  * Default validator, uses API key for authorization.  Must send API key as a authorization bearer token header.
  */
 export const apiKeyValidator: Validator = {
     name: "apiKeyValidator",
-    handler: async (h, p, config) => {
+    handler: async (h, q, p, config) => {
         if (h.authorization) {
             if (typeof h.authorization === "string" && h.authorization.split(" ")[1] === config.apiKey) {
                 return {success: true};
@@ -161,11 +150,31 @@ export const nullValidator: Validator = {
 };
 
 /**
+ * This function creates a validator that allows you to validate incoming messages via URL query string
+ */
+export function createQueryStringValidator(name: string, validations: Array<{param: string, value: string}>): Validator {
+  return {
+    name,
+    handler: async (h, q) => {
+      let response: {success: boolean, message?: string};
+      validations.forEach(v => {
+        if (_.get(q, v.param) !== v.value) {
+          response = {success: false, message: "Could not validate message!"};
+        } else {
+          response = {success: true};
+        }
+      });
+      return response;
+    },
+  };
+}
+
+/**
  * This validator is used to verify digest message contents sent via Github webhooks.
  */
 export const githubHmacValidator: Validator = {
     name: "githubHmacValidator",
-    handler: async (h, p, config) => {
+    handler: async (h, q, p, config) => {
         const body = JSON.stringify(p);
         const key = _.get(config, "sdm.eventRelay.secret");
         if (!key) {

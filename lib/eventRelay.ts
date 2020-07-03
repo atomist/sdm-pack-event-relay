@@ -15,27 +15,56 @@
  */
 
 import {
-    Destination,
-    HandlerContext,
-    HttpClientOptions,
+  Configuration,
+  Destination,
+  HandlerContext,
+  HttpClientOptions,
 } from "@atomist/automation-client";
 import {
-    ExtensionPack,
-    metadata,
+  ExtensionPack,
+  metadata,
+  SoftwareDeliveryMachineConfiguration,
 } from "@atomist/sdm";
 import {
-    EventRelayData,
-    EventRelayHandler,
-    EventRelayHandlerRemovingAutomationMetadataProcessor,
+  EventRelayData,
+  EventRelayHandler,
+  EventRelayHandlerRemovingAutomationMetadataProcessor,
 } from "./event/eventRelay";
 import { eventRelayPostProcessor } from "./support/customizer";
-import {
-    apiKeyValidator,
-    Validator,
-} from "./support/util";
+import { apiKeyValidator } from "./support/util";
 
 type EventTargetPublic<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<string | string[]>;
 type EventTargetPrivate<DATA> = (ctx: HandlerContext, payload: DATA) => Promise<Destination | Destination[]>;
+
+// This interface is copy of ParsedQs in the qs package
+interface QueryString { [key: string]: undefined | string | string[] | QueryString | QueryString[]; }
+
+/**
+ * This interface is used to describe the validator that is applied to incoming messages.  A validator can be used to
+ * validate message payloads (digest) or used to implement authentication/authorization for incoming messages.
+ *
+ * Validation is not always just secret or user/pass combination.  You can use any of the data supplied to determine if
+ * a message should be accepted or not.   "Accepted" means the return object has a `success` property set to true.   If
+ * an incoming payload is not accepted it should have a `success` property value of false.  Optionally you can include a
+ * message to return as part of the response.
+ */
+export interface Validator {
+  name: string;
+  /**
+   * Handler used to actually validate if a message should be accepted or rejected
+   *
+   * @param headers HTTP Headers sent for this request
+   * @param queryString HTTP Query string (if set)
+   * @param payload HTTP POST body
+   * @param config Configuration & SoftwareDeliveryMachineConfiguration
+   */
+  handler: (
+    headers: Record<string, string | string[] | undefined>,
+    queryString: QueryString,
+    payload: any,
+    config: Configuration & SoftwareDeliveryMachineConfiguration,
+  ) => Promise<{ success: boolean; message?: string }>;
+}
 
 /**
  * Represents the destination for an event relayer
@@ -62,6 +91,12 @@ type EventRelayDestination<DATA> =
         eventTarget: Destination | Destination[] | EventTargetPrivate<DATA>,
     };
 
+/**
+ * This interface describes the properties of an EventRelayer.
+ *
+ * There should only be 1 relayer for each data payload type. If multiple EventRelayer tests match the same payload
+ * there will be a warning message and only the first match will be used.
+ */
 export interface EventRelayer<DATA = any> {
     /**
      * Label for this relayer
@@ -69,7 +104,7 @@ export interface EventRelayer<DATA = any> {
     name: string;
 
     /**
-     * Check if this payload is of the event type this Relayer expects
+     * Check if this payload is of the event type this Relayer expects.
      * @param payload
      */
     test: (payload: EventRelayData<DATA>) => boolean;
@@ -83,13 +118,22 @@ export interface EventRelayer<DATA = any> {
      * Optionally supply a processor to modify data prior to relay
      */
     processor?: (payload: EventRelayData<DATA>) => Promise<EventRelayData<DATA>>;
+
+    /**
+     * Optionally supply a custom validator for this relayer.  If not supplied the default validator is used (or the
+     * validator supplied to the extension pack).
+     */
+    validator?: Validator;
 }
 
 interface EventRelaySupportOptions {
     eventRelayers: Array<EventRelayer<any>>;
 
     /**
-     * Which validator should be used to authenticate/validate incoming messages.  Defaults to apiKey if not set.
+     * Which validator should be used to authenticate/validate incoming messages if not supplied on the matching
+     * relayer.
+     *
+     * Defaults to apiKey if not set.
      */
     validation?: Validator;
 }

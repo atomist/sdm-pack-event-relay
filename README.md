@@ -46,7 +46,9 @@ configuration, see the `eventRelaySupport` type documentation.
 ## Authentication and/or Validation
 By default the event relay pack uses the Atomist API key configured to authorize incoming relay requests.  This key must
 be supplied in an authorization header (as a bearer token).  However, this is not appropriate for all use cases.  The
-authentication/validation used by the relay pack is pluggable using the `validation` option on `eventRelaySupport`.
+authentication/validation used by the relay pack is pluggable using the `validation` option on `eventRelaySupport` or by
+adding a `validator` to an `EventRelayer`.  The validator on the `EventRelayer` will be used first, if not present
+the `validation` global option will be used, if none are supplied the Atomist API key method will be used.
 
 There are the 3 built-in validators, or you can build your own (see the `Validator` interface).
 
